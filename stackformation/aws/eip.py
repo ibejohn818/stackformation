@@ -13,38 +13,43 @@ class EipStack(BaseStack):
 
     def __init__(self, stack_name):
 
-        super(EipStack, self).__init__("EIP", 1)
+        super(EipStack, self).__init__("EIP", 0)
 
         self.stack_name = stack_name
 
-        self.ips = {}
+        self.ips = []
 
     def add_ip(self, name):
 
-        self.ips.update({name:
-            self.template.add_resource(ec2.EIP(
-                "{}EIP".format(name)
-            ))
-        })
+        self.ips.append(name)
 
-        self.template.add_output([
+    def build_ip(self, ip, template):
+
+        eip = template.add_resource(ec2.EIP(
+            "{}EIP".format(ip)
+        ))
+
+        template.add_output([
             Output(
-                "{}AllocationId".format(name),
-                Value=GetAtt(self.ips[name], "AllocationId"),
-                Description="{} Elastic IP".format(name)
+                "{}AllocationId".format(ip),
+                Value=GetAtt(eip, "AllocationId"),
+                Description="{} Elastic IP".format(ip)
             ),
             Output(
-                "{}EIP".format(name),
-                Value=Ref(self.ips[name]),
-                Description="{} Elastic IP".format(name)
+                "{}EIP".format(ip),
+                Value=Ref(eip),
+                Description="{} Elastic IP".format(ip)
             ),
         ])
 
-        return self.ips[name]
-
     def build_template(self):
-        return self.template
 
+        t = self._init_template()
+
+        for ip in self.ips:
+            self.build_ip(ip, t)
+
+        return t
 
     def output_eip(self, name):
         return "{}{}EIP".format(self.get_stack_name(),name)

@@ -49,6 +49,14 @@ class Context(object):
         self.vars = {}
         self.sessions = {}
 
+    def get_var(self, name):
+        if not self.vars.get(name):
+            return False
+        return self.vars.get(name)
+
+    def add_vars(self, new):
+        self.vars.update(new)
+
     def get_input_var(self, key):
         pass
 
@@ -93,13 +101,17 @@ class Infra(object):
 
         return self.context.update({name: value})
 
-
     def add_input_vars(self, inp_vars):
 
-        return self.context.add_input_vars.update(inp_vars)
+        return self.context.add_vars(inp_vars)
 
     def get_input_var_name(self, name):
         pass
+
+    def find_input_name(self, name):
+        if not self.context.get_var(name):
+            raise Exception("ERROR: {} Input Not Set!".format(name))
+        return name
 
     def create_sub_infra(self, prefix):
         """
@@ -117,7 +129,7 @@ class Infra(object):
         if not isinstance(stack, (BaseStack)):
             raise ValueError("Error adding stack. Invalid Type!")
 
-        if stack.solo:
+        if isinstance(stack, SoloStack):
             for stk in self.stacks:
                 if isinstance(stack, type(stk)):
                     raise Exception("Solo Stack Error: {} type already added".format(type(stack).__name__))
@@ -128,6 +140,19 @@ class Infra(object):
 
         return stack
 
+    def get_stacks(self):
+
+        stacks = []
+        for stack in self.stacks:
+            stacks.append(stack)
+
+        for infra in self.sub_infras:
+            stacks.extend(infra.get_stacks())
+
+        return stacks
+
+class SoloStack():
+    pass
 
 class BaseStack(StackComponent):
 
@@ -146,7 +171,6 @@ class BaseStack(StackComponent):
         super(BaseStack, self).__init__(name)
 
         self.weight = weight
-        self.solo = False
         self.infra = None
         self.stack_name = ""
 
@@ -156,12 +180,7 @@ class BaseStack(StackComponent):
 
         defaults.update(kwargs)
 
-        self.template = self.init_template(
-            defaults['template'] if isinstance(
-                defaults['template'],
-                (troposphere.Template)) else None)
-
-    def init_template(self, temp=None):
+    def _init_template(self, temp=None):
 
         if temp is None:
             temp = troposphere.Template(
@@ -180,9 +199,34 @@ class BaseStack(StackComponent):
                 )
 
     def get_template_params(self):
-        pass
+        """
 
-    def build_template(self, infra):
+        """
+        t = self.build_template()
+
+        params = {}
+
+        for k, v in sorted(t.parameters.items()):
+            try:
+                default = v.Default
+            except AttributeError:
+                default = None
+            params[k] = default
+
+        return params
+
+    def get_template_outputs(self):
+
+        t = self.build_template()
+
+        op = {}
+
+        for k, v in sorted(t.outputs.items()):
+            op[k] = None
+
+        return op
+
+    def build_template(self):
         raise NotImplementedError("Must implement method to extend Stack")
 
 
@@ -203,5 +247,8 @@ class DeployStacks(object):
             stacks.extend(i.stacks)
 
         for s in stacks:
-            json = s.build_template().to_json()
+            template = s.build_template();
+            params = template.parameters
+            json = template.to_json()
             print(json)
+            print(template.outputs)

@@ -2,3 +2,4 @@ boto3
 Click
 troposphere
 awacs
+jinja2
