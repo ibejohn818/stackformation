@@ -1,46 +1,87 @@
-import stackformation.base
-import stackformation.aws.vpc
-from stackformation.base import (
+import stackformation
+from stackformation import (
         DeployStacks
 )
 from stackformation.aws.eip import EipStack
 from stackformation.aws.ec2 import EC2Stack
 from stackformation.aws.elb import ELBStack
+from stackformation.aws.vpc import VPCStack
+from stackformation.aws.s3 import S3Stack
+from stackformation.aws.iam import IAMStack
+import stackformation.aws.s3 as s3
+import stackformation.aws.iam as iam
 
-session = stackformation.base.BotoSession(region_name='us-west-2')
+def common_stacks(infra):
 
-infra = stackformation.base.Infra("Jch", session)
+    vpc = infra.add_stack(VPCStack(num_azs=3))
 
-prod_infra = infra.create_sub_infra("prod")
+    iam_stack = infra.add_stack(iam.IAMStack())
 
-svpc = infra.add_stack(stackformation.aws.vpc.VpcStack(num_azs=3))
-vpc = prod_infra.add_stack(stackformation.aws.vpc.VpcStack(num_azs=3))
-elb = prod_infra.add_stack(ELBStack("Web", vpc))
-elbdev = prod_infra.add_stack(ELBStack("WebDev", vpc))
-eip = prod_infra.add_stack(EipStack("IPS"))
-ec2 = prod_infra.add_stack(EC2Stack("Web", vpc))
+    web_profile = iam.EC2AdminProfile("WebAdmin")
 
-eip.add_ip("JchCom")
-eip.add_ip("AdminJchCom")
-eip.add_ip("JenkinJchCom")
+    iam_stack.add_role(web_profile)
+
+def prod_stacks():
+
+    prod_infra = infra.create_sub_infra("prod")
+
+    common_stacks(prod_infra)
+
+    vpc = prod_infra.find_stack(VPCStack)
+
+    vpc.base_cidr = "10.10"
+
+    s3_stack = prod_infra.add_stack(S3Stack("JchBuckets"))
+
+    test_bucket = s3_stack.add_bucket(s3.S3Bucket("JchTesterBucket"))
+    test_bucket.public_read = True
+
+    iam_stack = prod_infra.find_stack(iam.IAMStack)
+
+    web_profile = iam_stack.find_role(iam.EC2AdminProfile)
+
+    print(web_profile)
+
+    return prod_infra
+
+def dev_stacks():
+
+    dev_infra = infra.create_sub_infra("dev")
+
+    dev_infra.add_vars({
+        'InputWebEC2TagName': "WebServer"
+    })
+
+    common_stacks(dev_infra)
+
+    return dev_infra
 
 
+session = stackformation.BotoSession(region_name='us-east-2')
 
+infra = stackformation.Infra("Jch", session)
 
-prod_infra.add_input_vars({
-    'InputWebEC2TagName': "Web",
-    'InputWebEC2InstanceType': "t2.small"
-})
+prod_infra = prod_stacks()
+dev_infra =  dev_stacks()
 
 stacks = infra.get_stacks()
 
-for stack in stacks:
-    print(stack.get_stack_name())
-    print(stack.get_template_params())
-    print(stack.get_template_outputs())
+deploy = DeployStacks()
+
+deploy.deploy_stacks(infra)
+
+# print(prod_infra.context.vars)
+
+# for stack in stacks:
+    # print(stack.get_stack_name())
+    # print(stack.get_parameters())
+    # print(stack.get_outputs())
 
 s3 = session.client('s3')
+cf = session.client('cloudformation')
 
-print(s3)
-print(s3.list_buckets())
+# print(cf.describe_stacks())
+
+# print(s3)
+# print(s3.list_buckets())
 

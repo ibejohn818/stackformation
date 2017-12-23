@@ -1,4 +1,4 @@
-from stackformation.base import BaseStack
+from stackformation import BaseStack
 from troposphere import ec2
 from troposphere import (
         FindInMap, GetAtt, Join,
@@ -33,7 +33,7 @@ class EC2Stack(BaseStack):
                         self.infra.find_input_name(
                             "Input{}EC2TagName".format(self.stack_name)
                         ),
-                        Type="string",
+                        Type="String",
                         Description="Tag name for {} EC2 Stack".format(self.stack_name)
                     ))
 
@@ -41,7 +41,7 @@ class EC2Stack(BaseStack):
                         self.infra.find_input_name(
                             "Input{}EC2InstanceType".format(self.stack_name)
                         ),
-                        Type="string",
+                        Type="String",
                         Description="Instance Type for {} EC2 Stack".format(self.stack_name),
                         Default="t2.micro"
                     ))

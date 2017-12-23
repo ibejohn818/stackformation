@@ -1,4 +1,4 @@
-from stackformation.base import BaseStack
+from stackformation import (BaseStack, SoloStack)
 from troposphere import ec2
 from troposphere import (
         FindInMap, GetAtt, Join,
@@ -9,7 +9,7 @@ from troposphere import (
 
 
 
-class EipStack(BaseStack):
+class EipStack(BaseStack, SoloStack):
 
     def __init__(self, stack_name):
 

@@ -1,4 +1,4 @@
-from stackformation.base import BaseStack, SoloStack
+from stackformation import BaseStack, SoloStack
 from troposphere import ec2
 from troposphere import (
         FindInMap, GetAtt, Join,
@@ -8,11 +8,11 @@ from troposphere import (
 )
 
 
-class VpcStack(BaseStack, SoloStack):
+class VPCStack(BaseStack, SoloStack):
 
     def __init__(self, **kwargs):
 
-        super(VpcStack, self).__init__("VPC", 1)
+        super(VPCStack, self).__init__("VPC", 1)
 
         # only one allowed per infra
         self.solo = True
@@ -39,10 +39,12 @@ class VpcStack(BaseStack, SoloStack):
 
         self.default_acls = {}
 
-        self.add_default_acl_in("HTTP", 80, 80, 6, False, 100)
-        self.add_default_acl_in("HTTPS", 443, 443, 6, False, 100)
-        self.add_default_acl_in("SSH", 22, 22, 6, False, 100)
-        self.add_default_acl_in("ALLIN", -1, -1, 6, True, 100)
+        self.add_default_acl_in("HTTP", 80, 80, 6, 'false', 100)
+        self.add_default_acl_in("HTTPS", 443, 443, 6, 'false', 101)
+        self.add_default_acl_in("SSH", 22, 22, 6, 'false', 102)
+        self.add_default_acl_in("SSH", 22, 22, 6, 'false', 103)
+        self.add_default_acl_in("EPHEMERAL", 49152, 65535, 6, 'false', 104)
+        self.add_default_acl_in("ALLIN", None, None, 6, 'true', 100)
 
     def add_default_acl_in(self, service_name, port_a, port_b, proto, access, weight=100):
         """
@@ -106,7 +108,7 @@ class VpcStack(BaseStack, SoloStack):
             'PublicRouteTable',
             VpcId=Ref(vpc),
             Tags=Tags(
-                Name="{}{}Public Route Table".format(self.infra.prefix, self.infra.name)
+                Name="{} {}Public Route Table".format(''.join(self.infra.prefix), self.infra.name)
             )
         ))
 
@@ -122,7 +124,7 @@ class VpcStack(BaseStack, SoloStack):
             'PrivateRouteTable',
             VpcId=Ref(vpc),
             Tags=Tags(
-                Name="{}{}Private Route Table".format(self.infra.prefix, self.infra.name)
+                Name="{} {}Private Route Table".format(''.join(self.infra.prefix), self.infra.name)
             )
         ))
 
@@ -146,42 +148,72 @@ class VpcStack(BaseStack, SoloStack):
                     Name="Default ACL"
                 )
             ))
+        t.add_resource(ec2.NetworkAclEntry(
+            'AclAllIn',
+            Egress='false',
+            NetworkAclId=Ref(default_acl_table),
+            Protocol='-1',
+            CidrBlock='0.0.0.0/0',
+            RuleNumber='100',
+            RuleAction='allow'
+            ))
 
+        t.add_resource(ec2.NetworkAclEntry(
+            'AclAllOut',
+            Egress='true',
+            NetworkAclId=Ref(default_acl_table),
+            Protocol='-1',
+            CidrBlock='0.0.0.0/0',
+            RuleNumber='100',
+            RuleAction='allow'
+            ))
         # Add default entries
         for k, v in self.default_acls.items():
-            t.add_resource(ec2.NetworkAclEntry(
+            continue
+            ae = t.add_resource(ec2.NetworkAclEntry(
                 'NetworkAclEntry{}'.format(k),
                 Protocol=v[2],
-                RuleAction='allowed',
+                RuleAction='allow',
                 Egress=v[3],
                 NetworkAclId=Ref(default_acl_table),
                 RuleNumber=v[4],
                 CidrBlock='0.0.0.0/0',
-                PortRange=ec2.PortRange(From=v[0],To=v[1])
             ))
-
+            if v[0] is not None and v[1] is not None:
+                ae.PortRange=ec2.PortRange(From=v[0],To=v[1])
 
         # create public subnets
         cls_c = 0
         for i in range(self.defaults['num_azs']):
             cls_c += 1
+            key = i+1
+            sname = 'PublicSubnet{}'.format(key)
             sn = t.add_resource(ec2.Subnet(
-                'PublicSubnet{}'.format(i),
+                sname,
                 VpcId=Ref(vpc),
                 AvailabilityZone=Select(i, GetAZs(Ref("AWS::Region"))),
-                CidrBlock="{}.{}.0/24".format(self.base_cidr, cls_c)
+                CidrBlock="{}.{}.0/24".format(self.base_cidr, cls_c),
+                Tags=Tags(
+                    Name=sname
+                )
             ))
             self.subnets['public'].append(sn)
 
             # associate route table
             t.add_resource(ec2.SubnetRouteTableAssociation(
-                'PublicSubnetAssoc{}'.format(i),
+                'PublicSubnetAssoc{}'.format(key),
                 RouteTableId=Ref(public_route_table),
                 SubnetId=Ref(sn)
             ))
+            # associate acl
+            t.add_resource(ec2.SubnetNetworkAclAssociation(
+                'PublicSubnetAcl{}'.format(key),
+                SubnetId=Ref(sn),
+                NetworkAclId=Ref(default_acl_table)
+            ))
             t.add_output([
                 Output(
-                    'PublicSubnet{}'.format(i),
+                    'PublicSubnet{}'.format(key),
                     Value=Ref(sn)
                 )
             ])
@@ -190,23 +222,34 @@ class VpcStack(BaseStack, SoloStack):
         # create private subnets
         for i in range(self.defaults['num_azs']):
             cls_c += 1
+            key = i+1
+            sname ='PrivateSubnet{}'.format(key)
             sn = t.add_resource(ec2.Subnet(
-                'PrivateSubnet{}'.format(i),
+                sname,
                 VpcId=Ref(vpc),
                 AvailabilityZone=Select(i, GetAZs(Ref("AWS::Region"))),
-                CidrBlock="{}.{}.0/24".format(self.base_cidr, cls_c)
+                CidrBlock="{}.{}.0/24".format(self.base_cidr, cls_c),
+                Tags=Tags(
+                    Name=sname
+                )
             ))
             self.subnets['private'].append(sn)
 
             # associate route table
             t.add_resource(ec2.SubnetRouteTableAssociation(
-                'PrivateSubnetAssoc{}'.format(i),
+                'PrivateSubnetAssoc{}'.format(key),
                 RouteTableId=Ref(private_route_table),
                 SubnetId=Ref(sn)
             ))
+            # associate acl
+            t.add_resource(ec2.SubnetNetworkAclAssociation(
+                'PrivateSubnetAcl{}'.format(key),
+                SubnetId=Ref(sn),
+                NetworkAclId=Ref(default_acl_table)
+            ))
             t.add_output([
                 Output(
-                    'PrivateSubnet{}'.format(i),
+                    'PrivateSubnet{}'.format(key),
                     Value=Ref(sn)
                 )
             ])
@@ -220,5 +263,16 @@ class VpcStack(BaseStack, SoloStack):
                     for i in range(0, self.defaults['num_azs'])
                 ]
 
+    def output_private_subnets(self):
+        return [
+                    "{}PrivateSubnet{}".format(self.get_stack_name(), i+1)
+                    for i in range(0, self.defaults['num_azs'])
+                ]
+
+    def output_public_subnets(self):
+        return [
+                    "{}PublicSubnet{}".format(self.get_stack_name(), i+1)
+                    for i in range(0, self.defaults['num_azs'])
+                ]
     def output_vpc(self):
         return "{}VpcId".format(self.get_stack_name())

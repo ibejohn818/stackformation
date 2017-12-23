@@ -3,3 +3,5 @@ Click
 troposphere
 awacs
 jinja2
+inflection
+colorama
