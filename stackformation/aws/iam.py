@@ -260,21 +260,7 @@ class IAMStack(BaseStack):
 
     def find_role(self, clazz, name=None):
 
-        roles = []
-
-        for r in self.roles:
-            if clazz is r.__class__:
-                roles.append(r)
-
-        if len(roles) == 1 and (name is None or name == roles[0].name):
-            return roles[0]
-
-        if len(roles) > 1 and name is not None:
-            for r in roles:
-                if r.name == name:
-                    return r
-
-        return None
+        return self.find_class_in_list(self.roles, clazz, name)
 
     def add_role(self, role):
         self.roles.append(role)

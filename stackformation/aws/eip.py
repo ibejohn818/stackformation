@@ -9,11 +9,11 @@ from troposphere import (
 
 
 
-class EipStack(BaseStack, SoloStack):
+class EIPStack(BaseStack, SoloStack):
 
-    def __init__(self, stack_name):
+    def __init__(self, stack_name=""):
 
-        super(EipStack, self).__init__("EIP", 0)
+        super(EIPStack, self).__init__("EIP", 0)
 
         self.stack_name = stack_name
 

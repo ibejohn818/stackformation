@@ -3,6 +3,9 @@ import boto3
 import troposphere
 import inflection
 import logging
+import botocore
+import sys
+import re
 
 """Top-level package for StackFormation."""
 
@@ -103,6 +106,7 @@ class Infra(object):
         self.stacks = []
         self.boto_session = boto_session
         self.sub_infras = []
+        self.parent_infras = []
         self.input_vars = {}
         self.output_vars = {}
         self.context = Context()
@@ -131,6 +135,7 @@ class Infra(object):
         infra = Infra(self.name)
         infra.prefix.extend(self.prefix + [prefix])
         infra.boto_session = self.boto_session
+        infra.parent_infras.extend(self.parent_infras + [self])
         self.sub_infras.append(infra)
 
         return infra
@@ -154,16 +159,39 @@ class Infra(object):
         return stack
 
     def get_stacks(self):
+        return self.list_stacks()
+
+    def list_stacks(self):
 
         stacks = []
         for stack in self.stacks:
-            stack.load_stack_outputs(self)
             stacks.append(stack)
 
         for infra in self.sub_infras:
             stacks.extend(infra.get_stacks())
 
+        def _cmp(x):
+            return x.weight
+
+        stacks = sorted(stacks, key=_cmp)
+
         return stacks
+
+    def get_dependent_stacks(self, stack):
+
+        results = []
+
+        params = stack.get_parameters().keys()
+
+        stacks = self.list_stacks()
+
+        for stk in stacks:
+            ops = stk.get_outputs().keys()
+            for o in ops:
+                if o in params:
+                    results.append(stk)
+
+        return results
 
     def gather_contexts(self):
 
@@ -259,7 +287,7 @@ class BaseStack(StackComponent):
 
         return params
 
-    def get_outputs(self):
+    def get_outputs(self, **kwargs):
 
         t = self.build_template()
 
@@ -267,6 +295,9 @@ class BaseStack(StackComponent):
 
         for k, v in sorted(t.outputs.items()):
             op[k] = None
+
+        if kwargs.get("skip_prefixing") and  kwargs.get("skip_prefixing") is True:
+            return op
 
         return self.prefix_stack_outputs(op)
 
@@ -297,8 +328,6 @@ class BaseStack(StackComponent):
 
         return out
 
-    def build_template(self):
-        raise NotImplementedError("Must implement method to extend Stack")
 
     def start_deploy(self, infra):
         """
@@ -306,52 +335,62 @@ class BaseStack(StackComponent):
         """
         template = self.build_template()
         parameters = self.get_parameters()
+        cf = infra.boto_session.client("cloudformation")
+        present = True
+        try:
+            chk = cf.describe_stacks(StackName=self.get_remote_stack_name())
+            print(chk)
 
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == "ValidationError":
+                present = False
+            else:
+                print(e.response['Error']['Code'])
+                print("FATAL ERROR")
+                exit(1)
 
-class DeployStacks(object):
+        template = self.build_template()
+        params = self.get_parameters()
 
-    def __init__(self):
-        pass
+        dep_kw = {
+                'StackName': self.get_remote_stack_name(),
+                'TemplateBody': template.to_json(),
+                'Capabilities':['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
+                }
 
-    def fill_params(self, params, context):
+        try:
+            if present:
+                res = cf.update_stack(**dep_kw)
+            else:
+                res = cf.create_stack(**dep_kw)
+        except botocore.exceptions.ClientError as e:
+            err = e.response['Error']
+            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):
+                return False
+            else:
+                raise e
 
-        p = []
+        return True
 
-        for k, v in params.items():
-            val = context.get_var(k)
-            if not val:
-                val = None
-            p.append({
-                'ParameterKey': k,
-                'ParameterValue': val
-            })
-        return p
+    def find_class_in_list(self, ls, clazz, name=None):
 
-    def deploy_stacks(self, infra):
+        results = []
 
-        stacks = infra.get_stacks()
+        for r in ls:
+            if clazz is r.__class__:
+                results.append(r)
 
-        for s in stacks:
-            template = s.build_template()
-            print(s.get_stack_name())
-            json = template.to_json()
-            stack_name = s.get_stack_name()
-            params = s.get_parameters()
-            params = self.fill_params(params, s.infra.context)
-            print(params)
-            print(s.get_remote_stack_name())
-            # if  stack_name == "ProdJchJchbucketsS3":
-            if stack_name == "ProdJchIamIam__":
-            # if stack_name == "ProdJchVpc":
-                cf = infra.boto_session.client('cloudformation')
-                cf.create_stack(
-                # cf.update_stack(
-                    StackName=s.get_remote_stack_name(),
-                    TemplateBody=json,
-                    Parameters=params,
-                    Capabilities=[
-                        "CAPABILITY_NAMED_IAM",
-                        "CAPABILITY_IAM"])
+        if len(results) == 1 and (name is None or name == results[0].name):
+            return results[0]
 
+        if len(results) > 1 and name is not None:
+            for r in roles:
+                if r.name == name:
+                    return r
 
+        return None
 
+    # def get_dependent_stacks(self, infra):
+
+    def build_template(self):
+        raise NotImplementedError("Must implement method to extend Stack")

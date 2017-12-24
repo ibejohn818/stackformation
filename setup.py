@@ -4,6 +4,9 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
+import sys
+if sys.version_info < (3,0):
+    sys.exit('Sorry, Only Python 3.x is not supported')
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()

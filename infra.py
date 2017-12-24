@@ -1,15 +1,15 @@
 import stackformation
-from stackformation import (
+from stackformation.deploy import (
         DeployStacks
 )
-from stackformation.aws.eip import EipStack
+from stackformation.aws import (eip)
 from stackformation.aws.ec2 import EC2Stack
 from stackformation.aws.elb import ELBStack
 from stackformation.aws.vpc import VPCStack
 from stackformation.aws.s3 import S3Stack
 from stackformation.aws.iam import IAMStack
 import stackformation.aws.s3 as s3
-import stackformation.aws.iam as iam
+from stackformation.aws import iam
 
 def common_stacks(infra):
 
@@ -21,6 +21,14 @@ def common_stacks(infra):
 
     iam_stack.add_role(web_profile)
 
+    s3_stack = infra.add_stack(s3.S3Stack("test"))
+
+    test_bucket = s3_stack.add_bucket(s3.S3Bucket("jchtest"))
+
+    web_profile.add_policy(iam.S3FullBucketAccess(test_bucket))
+
+    eip_stack = infra.add_stack(eip.EIPStack())
+
 def prod_stacks():
 
     prod_infra = infra.create_sub_infra("prod")
@@ -30,11 +38,6 @@ def prod_stacks():
     vpc = prod_infra.find_stack(VPCStack)
 
     vpc.base_cidr = "10.10"
-
-    s3_stack = prod_infra.add_stack(S3Stack("JchBuckets"))
-
-    test_bucket = s3_stack.add_bucket(s3.S3Bucket("JchTesterBucket"))
-    test_bucket.public_read = True
 
     iam_stack = prod_infra.find_stack(iam.IAMStack)
 
@@ -54,6 +57,10 @@ def dev_stacks():
 
     common_stacks(dev_infra)
 
+    vpc = dev_infra.find_stack(VPCStack)
+
+    vpc.base_cidr = "10.50"
+
     return dev_infra
 
 
@@ -64,24 +71,18 @@ infra = stackformation.Infra("Jch", session)
 prod_infra = prod_stacks()
 dev_infra =  dev_stacks()
 
-stacks = infra.get_stacks()
 
-deploy = DeployStacks()
+stacks = infra.list_stacks()
 
-deploy.deploy_stacks(infra)
+for stack in stacks:
+    print("STACK: {}".format(stack.get_stack_name()))
+    print("DEPS: ")
+    deps = infra.get_dependent_stacks(stack)
+    for s in  deps:
+        print(" -{} ({})".format(s.get_stack_name(), s.__class__))
+    print("------------------")
 
-# print(prod_infra.context.vars)
 
-# for stack in stacks:
-    # print(stack.get_stack_name())
-    # print(stack.get_parameters())
-    # print(stack.get_outputs())
+cf = session.client("cloudformation")
 
-s3 = session.client('s3')
-cf = session.client('cloudformation')
-
-# print(cf.describe_stacks())
-
-# print(s3)
-# print(s3.list_buckets())
 
