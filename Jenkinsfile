@@ -9,7 +9,6 @@ node {
     try {
 
         def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
-        def pwd = pwd()
 
         stage("Stage Repo") {
             echo "Checkout repo"
@@ -21,7 +20,7 @@ node {
         }
 
         stage("Run Tests") {
-            def ec = sh script:"docker run --rm -v ${pwd}:${pwd} -w ${pwd} ${img_tag} python3 setup.py covxml", returnStaus:true
+            def ec = sh script:"docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} python3 setup.py covxml", returnStaus:true
             echo "${ec}"
             currentBuild.status = "SUCCESS"
         }
