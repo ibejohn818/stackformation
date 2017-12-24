@@ -24,17 +24,17 @@ node {
             currentBuild.status = "SUCCESS"
         }
 
-        stage("Send Code Coverage") {
-            if (currentBuild.result == "SUCCESS") {
-                echo "Sending Coverage Report..."
-                withCredentials([[$class: 'StringBinding', credentialsId: 'StackformationCodecov', variable: 'CODECOV']]) {
-                    echo "KEY: ${env.CODECOV}"
-                    sh "curl -s https://codecov.io/bash | bash -s - -t ${env.CODECOV}"
-                }
-            } else {
-                echo "Skipping coverage report..."
-            }
-        }
+        /*stage("Send Code Coverage") {*/
+            /*if (currentBuild.result == "SUCCESS") {*/
+                /*echo "Sending Coverage Report..."*/
+                /*withCredentials([[$class: 'StringBinding', credentialsId: 'StackformationCodecov', variable: 'CODECOV']]) {*/
+                    /*echo "KEY: ${env.CODECOV}"*/
+                    /*sh "curl -s https://codecov.io/bash | bash -s - -t ${env.CODECOV}"*/
+                /*}*/
+            /*} else {*/
+                /*echo "Skipping coverage report..."*/
+            /*}*/
+        /*}*/
 
     } catch(Exception err) {
         currentBuild.result = "FAILURE"
