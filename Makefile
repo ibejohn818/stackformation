@@ -57,10 +57,25 @@ test: ## run tests quickly with the default Python
 test-all: ## run tests on every Python version with tox
 	tox
 
-coverage: ## check code coverage quickly with the default Python
+__coverage: ## check code coverage quickly with the default Python
 	coverage run --source stackformation -m pytest
 	coverage report -m
 	coverage html
+	$(BROWSER) htmlcov/index.html
+
+coverage-term: clean ## test coverage terminal report ( Docker )
+	docker build -f Dockerfile-test -t stackformation:test .
+	docker run --rm -it -u $(shell id -u):$(shell id -g) \
+		-v /etc/passwd:/etc/passwd \
+		-v $(shell pwd):$(shell pwd) -w \
+		$(shell pwd) stackformation:test python3 setup.py covterm
+
+coverage-html: clean ## test coverage html report ( Docker )
+	docker build -f Dockerfile-test -t stackformation:test .
+	docker run --rm -it -u $(shell id -u):$(shell id -g) \
+		-v /etc/passwd:/etc/passwd \
+		-v $(shell pwd):$(shell pwd) -w \
+		$(shell pwd) stackformation:test python3 setup.py covhtml
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
