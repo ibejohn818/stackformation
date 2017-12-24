@@ -16,11 +16,11 @@ node {
         }
 
         stage("Build Test Image") {
-            sh 'docker build -f Dockerfile-test -t ${img_tag} .'
+            sh "docker build -f Dockerfile-test -t ${img_tag} ."
         }
 
         stage("Run Tests") {
-            sh 'docker run --rm -v $(pwd):$(pwd) -w $(pwd) ${img_tag} python3 setup.py covxml'
+            sh "docker run --rm -v $(pwd):$(pwd) -w $(pwd) ${img_tag} python3 setup.py covxml"
             currentBuild.status = "SUCCESS"
         }
 
@@ -41,6 +41,6 @@ node {
     } finally {
 
         def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
-        sh 'docker rmi ${img_tag} --force'
+        sh "docker rmi ${img_tag} --force"
     }
 }
