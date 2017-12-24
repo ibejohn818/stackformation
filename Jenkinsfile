@@ -21,7 +21,8 @@ node {
         }
 
         stage("Run Tests") {
-            sh "docker run --rm -v ${pwd}:${pwd} -w ${pwd} ${img_tag} python3 setup.py covxml"
+            def ec = sh script:"docker run --rm -v ${pwd}:${pwd} -w ${pwd} ${img_tag} python3 setup.py covxml" returnStaus:true
+            echo ${ec}
             currentBuild.status = "SUCCESS"
         }
 
