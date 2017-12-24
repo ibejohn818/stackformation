@@ -20,8 +20,7 @@ node {
         }
 
         stage("Run Tests") {
-            def ec = sh script:"docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} python3 setup.py covxml", returnStaus:true
-            echo "${ec}"
+            sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} python3 setup.py covxml"
             currentBuild.status = "SUCCESS"
         }
 
