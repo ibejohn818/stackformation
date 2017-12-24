@@ -13,7 +13,6 @@ node {
             checkout scm
         }
 
-        currentBuild.result = "FAILURE"
 
     } catch(Exception err) {
         currentBuild.result = "FAILURE"
