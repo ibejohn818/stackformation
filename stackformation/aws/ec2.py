@@ -1,4 +1,7 @@
 from stackformation import BaseStack
+import logging
+from stackformation import 
+from colorama import Fore, Style, Back
 from troposphere import ec2
 from troposphere import (
     FindInMap, GetAtt, Join,
@@ -6,6 +9,9 @@ from troposphere import (
     Select, Tags, Template,
     GetAZs, Export, Base64
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class EC2Stack(BaseStack):
@@ -46,27 +52,6 @@ class EC2Stack(BaseStack):
         if context.check_var(ud_key):
             data = context.get_var(ud_key)
             context.add_vars({"{}{}".format(ud_key,"0"): data})
-
-        # try to detach volumes if attached
-        # try to load outputs, if False, no 
-        # need to detach
-        # outputs = self.load_stack_outputs(self.infra)
-        # if not outputs:
-            # return
-        # instance_id = outputs[self.output_instance()]
-        # for vol in self.volumes:
-            # output_key = vol.output_volume()
-            # volume_id = context.get_var(output_key)
-            # try:
-
-                # self.infra.boto_session.client("ec2").detach_volume(
-                        # Force=True,
-                        # VolumeId=volume_id,
-                        # InstanceId=instance_id
-                        # )
-
-            # except Exception:
-                # continue
 
 
     def build_template(self):
