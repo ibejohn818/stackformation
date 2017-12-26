@@ -2,18 +2,19 @@ import stackformation
 from stackformation.deploy import (
         DeployStacks
 )
-from stackformation.aws import (eip)
-from stackformation.aws.ec2 import EC2Stack
 from stackformation.aws.elb import ELBStack
-from stackformation.aws.vpc import VPCStack
-from stackformation.aws.s3 import S3Stack
-from stackformation.aws.iam import IAMStack
-import stackformation.aws.s3 as s3
-from stackformation.aws import iam
+from stackformation.aws import ( iam, vpc, ec2, user_data,
+                                    ebs, s3, eip
+                                )
+
 
 def common_stacks(infra):
 
-    vpc = infra.add_stack(VPCStack(num_azs=3))
+    vpc_stack = infra.add_stack(vpc.VPCStack(num_azs=3))
+
+    ssh_sg = vpc_stack.add_security_group(vpc.SSHSecurityGroup())
+
+    web_sg = vpc_stack.add_security_group(vpc.WebSecurityGroup())
 
     iam_stack = infra.add_stack(iam.IAMStack())
 
@@ -33,17 +34,47 @@ def prod_stacks():
 
     prod_infra = infra.create_sub_infra("prod")
 
+    prod_infra.add_vars({
+        'InputWebEC2TagName': "WebServer",
+        'InputWebEC2InstanceType': "t2.medium",
+        'InputWebEC2RootDeviceSize': "50",
+        'InputWebEBSDeviceName': "/dev/xvdb",
+        'InputNFSEBSDeviceName': "/dev/xvdc",
+    })
     common_stacks(prod_infra)
 
-    vpc = prod_infra.find_stack(VPCStack)
+    vpc_stack = prod_infra.find_stack(vpc.VPCStack)
 
-    vpc.base_cidr = "10.10"
+    vpc_stack.base_cidr = "10.10"
+
+    web_sg = vpc_stack.find_security_group(vpc.WebSecurityGroup)
+    ssh_sg = vpc_stack.find_security_group(vpc.SSHSecurityGroup)
+
+    eip_stack = prod_infra.find_stack(eip.EIPStack)
+
+    web_ip = eip_stack.add_ip("WebServer")
+
+    ebs_stack = prod_infra.add_stack(ebs.EBSStack("Vols", vpc_stack))
+
+    web_vol = ebs_stack.add_volume(ebs.EBSVolume('Web', 100))
+    nfs_vol = ebs_stack.add_volume(ebs.EBSVolume('NFS', 350))
 
     iam_stack = prod_infra.find_stack(iam.IAMStack)
 
     web_profile = iam_stack.find_role(iam.EC2AdminProfile)
 
-    print(web_profile)
+    ec2_stack = prod_infra.add_stack(ec2.EC2Stack("Web", vpc_stack, web_profile))
+
+    ec2_stack.add_security_group(web_sg)
+    ec2_stack.add_security_group(ssh_sg)
+
+    ec2_stack.add_volume(nfs_vol)
+    ec2_stack.add_volume(web_vol)
+
+    ec2_stack.keypair("jch")
+    ec2_stack.add_user_data(user_data.WriteEIP(web_ip))
+    ec2_stack.add_user_data(user_data.MountEBS(nfs_vol, "/mnt/nfs"))
+    ec2_stack.add_user_data(user_data.MountEBS(web_vol, "/mnt/web"))
 
     return prod_infra
 
@@ -52,14 +83,14 @@ def dev_stacks():
     dev_infra = infra.create_sub_infra("dev")
 
     dev_infra.add_vars({
-        'InputWebEC2TagName': "WebServer"
+        'InputWebEC2TagName': "WebServer",
     })
 
     common_stacks(dev_infra)
 
-    vpc = dev_infra.find_stack(VPCStack)
+    vpc_stack = dev_infra.find_stack(vpc.VPCStack)
 
-    vpc.base_cidr = "10.50"
+    vpc_stack.base_cidr = "10.50"
 
     return dev_infra
 
@@ -78,7 +109,7 @@ for stack in stacks:
     print("STACK: {}".format(stack.get_stack_name()))
     print("DEPS: ")
     deps = infra.get_dependent_stacks(stack)
-    for s in  deps:
+    for k, s in  deps.items():
         print(" -{} ({})".format(s.get_stack_name(), s.__class__))
     print("------------------")
 

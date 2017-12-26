@@ -8,6 +8,38 @@ from troposphere import (
 )
 
 
+class EIP(object):
+
+    def __init__(self, name):
+
+        self.name = name
+        self.stack = None
+
+    def _build_ip(self, t):
+
+        eip = t.add_resource(ec2.EIP(
+            "{}EIP".format(self.name)
+        ))
+
+        t.add_output([
+            Output(
+                "{}AllocationId".format(self.name),
+                Value=GetAtt(eip, "AllocationId"),
+                Description="{} Elastic IP".format(self.name)
+            ),
+            Output(
+                "{}EIP".format(self.name),
+                Value=Ref(eip),
+                Description="{} Elastic IP".format(self.name)
+            ),
+        ])
+
+    def output_eip(self):
+        return "{}{}EIP".format(self.stack.get_stack_name(),self.name)
+
+    def output_allocation_id(self, name):
+        return "{}{}AllocationId".format(self.stack.get_stack_name(), self.name)
+
 
 class EIPStack(BaseStack, SoloStack):
 
@@ -21,38 +53,26 @@ class EIPStack(BaseStack, SoloStack):
 
     def add_ip(self, name):
 
-        self.ips.append(name)
+        eip = EIP(name)
+        eip.stack = self
+        self.ips.append(eip)
+        return eip
 
-    def build_ip(self, ip, template):
+    def find_ip(self, name):
 
-        eip = template.add_resource(ec2.EIP(
-            "{}EIP".format(ip)
-        ))
+        for ip in self.ips:
+            if ip.name == name:
+                return ip
 
-        template.add_output([
-            Output(
-                "{}AllocationId".format(ip),
-                Value=GetAtt(eip, "AllocationId"),
-                Description="{} Elastic IP".format(ip)
-            ),
-            Output(
-                "{}EIP".format(ip),
-                Value=Ref(eip),
-                Description="{} Elastic IP".format(ip)
-            ),
-        ])
+        return None
+
 
     def build_template(self):
 
         t = self._init_template()
 
         for ip in self.ips:
-            self.build_ip(ip, t)
+            ip._build_ip(t)
 
         return t
 
-    def output_eip(self, name):
-        return "{}{}EIP".format(self.get_stack_name(),name)
-
-    def output_allocation_id(self, name):
-        return "{}{}AllocationId".format(self.get_stack_name(), name)

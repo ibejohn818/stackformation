@@ -6,6 +6,12 @@ import logging
 import botocore
 import sys
 import re
+import datetime
+import pytz
+import time
+from colorama import Fore, Style, Back
+import stackformation.utils as utils
+
 
 """Top-level package for StackFormation."""
 
@@ -14,6 +20,26 @@ __email__ = 'john@johnchardy.com'
 __version__ = '0.1.0'
 
 logger = logging.getLogger(__name__)
+
+status_to_color = {
+    'CREATE_IN_PROGRESS': Fore.CYAN,
+    'CREATE_FAILED': Fore.RED,
+    'CREATE_COMPLETE': Fore.GREEN,
+    'ROLLBACK_IN_PROGRESS': Fore.RED,
+    'ROLLBACK_FAILED': Fore.RED,
+    'ROLLBACK_COMPLETE': Fore.RED,
+    'DELETE_IN_PROGRESS': Fore.CYAN,
+    'DELETE_FAILED': Fore.RED,
+    'DELETE_COMPLETE': Fore.GREEN,
+    'UPDATE_FAILED': Fore.RED,
+    'UPDATE_IN_PROGRESS': Fore.CYAN,
+    'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS': Fore.CYAN,
+    'UPDATE_COMPLETE': Fore.GREEN,
+    'UPDATE_ROLLBACK_IN_PROGRESS': Fore.RED,
+    'UPDATE_ROLLBACK_FAILED': Fore.RED,
+    'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS': Fore.CYAN,
+    'UPDATE_ROLLBACK_COMPLETE': Fore.GREEN,
+}
 
 class BotoSession():
 
@@ -71,17 +97,8 @@ class Context(object):
     def add_vars(self, new):
         self.vars.update(new)
 
-    def get_input_var(self, key):
-        pass
-
-    def get_output_var(self, key):
-        pass
-
-    def get_input_vars(self):
-        pass
-
-    def get_output_vars(self):
-        pass
+    def check_var(self, name):
+        return self.vars.get(name)
 
 
 class StackComponent(object):
@@ -112,15 +129,16 @@ class Infra(object):
         self.context = Context()
 
     def add_var(self, name, value):
-
         return self.context.update({name: value})
 
     def add_vars(self, inp_vars):
-
         return self.context.add_vars(inp_vars)
 
-    def get_input_var_name(self, name):
-        pass
+    def check_var(self, name):
+        return self.context.check_var(name)
+
+    def get_var(self, name):
+        return self.context.get_var(name)
 
     def find_input_name(self, name):
         if not self.context.get_var(name):
@@ -161,7 +179,13 @@ class Infra(object):
     def get_stacks(self):
         return self.list_stacks()
 
-    def list_stacks(self):
+    def list_stacks(self, **kwargs):
+
+        defaults = {
+                'reverse': False
+                }
+
+        defaults.update(kwargs)
 
         stacks = []
         for stack in self.stacks:
@@ -173,15 +197,22 @@ class Infra(object):
         def _cmp(x):
             return x.weight
 
-        stacks = sorted(stacks, key=_cmp)
+        stacks = sorted(stacks, key=_cmp, reverse=defaults.get("reverse"))
 
         return stacks
 
     def get_dependent_stacks(self, stack):
 
-        results = []
+        results = {}
 
-        params = stack.get_parameters().keys()
+        params = list(stack.get_parameters().keys())
+
+        env = utils.jinja_env({}, True)
+
+        stack.parse_template_components(env[0], Context())
+
+
+        params += env[1]
 
         stacks = self.list_stacks()
 
@@ -189,7 +220,7 @@ class Infra(object):
             ops = stk.get_outputs().keys()
             for o in ops:
                 if o in params:
-                    results.append(stk)
+                    results.update({stk.get_stack_name(): stk})
 
         return results
 
@@ -241,12 +272,14 @@ class BaseStack(StackComponent):
         self.weight = weight
         self.infra = None
         self.stack_name = ""
+        self._deploy_event = None
 
         defaults = {
             'template': None
         }
 
         defaults.update(kwargs)
+        self.template_components = {}
 
     def _init_template(self, temp=None):
 
@@ -255,6 +288,39 @@ class BaseStack(StackComponent):
                 "{0} Template".format(
                     self.name))
         return temp
+
+    def add_template_component(self, var, component):
+
+        if not isinstance(component, TemplateComponent):
+            raise Exception("Not instance of template component")
+
+        var = "{}{}".format(self.stack_name, var)
+
+        if not self.template_components.get(var):
+            self.template_components.update({var: []})
+
+        self.template_components[var].append(component)
+
+    def parse_template_components(self, env, context):
+
+        results = {}
+
+        if len(self.template_components) <= 0:
+            results
+
+        for k, v in self.template_components.items():
+            for c in v:
+                text = c.text()
+                t = env.from_string(text)
+                if not results.get(k):
+                    results[k] = []
+                results[k].append(t.render(context.vars))
+
+        for k, v in results.items():
+            context.add_vars({k: ''.join(v)})
+
+        return results
+
 
     def get_stack_name(self):
 
@@ -299,7 +365,7 @@ class BaseStack(StackComponent):
         if kwargs.get("skip_prefixing") and  kwargs.get("skip_prefixing") is True:
             return op
 
-        return self.prefix_stack_outputs(op)
+        return self.prefix_stack_vars(op)
 
     def load_stack_outputs(self, infra):
 
@@ -314,13 +380,13 @@ class BaseStack(StackComponent):
         except Exception:
             return False
 
-        op = self.prefix_stack_outputs(op)
+        op = self.prefix_stack_vars(op)
 
-        self.infra.add_vars(op)
+        infra.add_vars(op)
 
         return op
 
-    def prefix_stack_outputs(self, vari):
+    def prefix_stack_vars(self, vari):
 
         out = {}
         for k, v in vari.items():
@@ -329,12 +395,30 @@ class BaseStack(StackComponent):
         return out
 
 
-    def start_deploy(self, infra):
+    def fill_params(self, params, context):
+
+        p = []
+
+        for k, v in params.items():
+            val = context.get_var(k)
+            if not val and v:
+                val = v
+            if not val:
+                val = None
+            p.append({
+                'ParameterKey': k,
+                'ParameterValue': val
+            })
+        return p
+
+    def before_deploy(self, infra, context):
+        pass
+
+    def start_deploy(self, infra, context):
         """
 
         """
-        template = self.build_template()
-        parameters = self.get_parameters()
+
         cf = infra.boto_session.client("cloudformation")
         present = True
         try:
@@ -349,20 +433,30 @@ class BaseStack(StackComponent):
                 print("FATAL ERROR")
                 exit(1)
 
+        env = utils.jinja_env(context)
+
         template = self.build_template()
-        params = self.get_parameters()
+        parameters = self.get_parameters()
+        template_vars = self.parse_template_components(env[0], context)
+
+        self.before_deploy(context, parameters)
+
+        parameters = self.fill_params(parameters, context)
 
         dep_kw = {
                 'StackName': self.get_remote_stack_name(),
                 'TemplateBody': template.to_json(),
+                'Parameters': parameters,
                 'Capabilities':['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
                 }
 
         try:
             if present:
                 res = cf.update_stack(**dep_kw)
+                logger.info('UPDATING STACK: {}'.format(self.get_stack_name()))
             else:
                 res = cf.create_stack(**dep_kw)
+                logger.info('CREATING STACK: {}'.format(self.get_stack_name()))
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']
             if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):
@@ -371,6 +465,94 @@ class BaseStack(StackComponent):
                 raise e
 
         return True
+
+    def deploying(self, infra):
+
+        cf = infra.boto_session.client("cloudformation")
+
+        if self._deploy_event is None:
+            self._deploy_event = {
+                    'stack_name': self.get_remote_stack_name(),
+                    'ts': datetime.datetime.now(pytz.utc),
+                    'token': '',
+                    'stack_id': ''
+                    }
+            try:
+                info = cf.describe_stacks(StackName=self._deploy_event['stack_name'])
+                info = info['Stacks'][0]
+
+                self._deploy_event['stack_id'] = info['StackId']
+            except botocore.exceptions.ClientError as e:
+                logger.warn(e)
+                return
+
+        name = self._deploy_event['stack_name']
+        ts = self._deploy_event['ts']
+        stack_id = self._deploy_event['stack_id']
+        token = self._deploy_event['token']
+
+        try:
+            info = cf.describe_stacks(StackName=self._deploy_event['stack_id'])
+            info = info['Stacks'][0]
+
+            status = info['StackStatus']
+
+
+            if status.endswith('_FAILED'):
+                raise Exception("STACK DEPLOY FAILED: {}".format(self.get_stack_name()))
+
+            if status.endswith("ROLLBACK_COMPLETE"):
+                raise Exception("STACK ROLLED BACK: {}".format(self.get_stack_name()))
+
+            if status.endswith('_COMPLETE'):
+                return False
+            else:
+                time.sleep(3)
+
+                if len(token) > 0:
+                    event = cf.describe_stack_events(StackName=stack_id,
+                            NextToken=token)
+                else:
+                    event = cf.describe_stack_events(StackName=stack_id)
+
+                event['StackEvents'].sort(key=lambda e: e['Timestamp'])
+
+                for e in event['StackEvents']:
+                    if e['Timestamp'] > ts:
+
+                        reason = ""
+                        if 'ResourceStatusReason' in e:
+                            reason = e['ResourceStatusReason']
+
+                        # logger style
+                        if e['ResourceStatus'] in status_to_color:
+                            color = status_to_color[
+                                e['ResourceStatus']
+                            ]
+                        else:
+                            color = Fore.MAGENTA
+
+                        logger.info("{} {} ({}): [{}]: {}{}{}{}".format(
+                            color,
+                            e['LogicalResourceId'],
+                            e['ResourceType'],
+                            e['ResourceStatus'],
+                            Style.RESET_ALL,
+                            Style.BRIGHT,
+                            reason,
+                            Style.RESET_ALL
+                            ))
+
+                        ts = e['Timestamp']
+                self._deploy_event['ts'] = ts
+                if 'NextToken' in event:
+                    self._deploy_event['token'] = event['NextToken']
+        except botocore.exceptions.ClientError as e:
+            logger.warn(e)
+            return
+
+        return True
+
 
     def find_class_in_list(self, ls, clazz, name=None):
 
@@ -384,7 +566,7 @@ class BaseStack(StackComponent):
             return results[0]
 
         if len(results) > 1 and name is not None:
-            for r in roles:
+            for r in results:
                 if r.name == name:
                     return r
 
@@ -394,3 +576,9 @@ class BaseStack(StackComponent):
 
     def build_template(self):
         raise NotImplementedError("Must implement method to extend Stack")
+
+
+class TemplateComponent(object):
+
+    def text(self, infra, context):
+        raise Exception("Must implement get_template method")

@@ -5,15 +5,12 @@
 import click
 import imp
 import stackformation.deploy as dep
+import logging
 
 
 @click.group()
-def main(args=None):
-    """Console script for stackformation."""
-    click.echo("Replace this message by putting your code into "
-               "stackformation.cli.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
-
+def main():
+    configure_logging()
 
 
 @main.command()
@@ -32,6 +29,27 @@ def deploy(selector):
         exit(0)
 
     deploy.deploy_stacks(infra, selector)
+
+
+
+def configure_logging():
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    stream = logging.StreamHandler()
+    stream.setFormatter(
+            logging.Formatter('%(levelname)s - %(message)s'))
+    logger.addHandler(stream)
+
+    # config boto logger
+    boto_silences = [
+        'botocore.vendored.requests',
+        'botocore.credentials',
+    ]
+    for name in boto_silences:
+        boto_logger = logging.getLogger(name)
+        boto_logger.setLevel(logging.WARN)
 
 if __name__ == "__main__":
     main()

@@ -9,41 +9,128 @@ from troposphere import (
 import inflection
 
 
-class SecGroup(object):
+class SecurityGroup(object):
 
     def __init__(self, name):
         self.name = name
-        self.stack
+        self.stack = None
 
-    def _build_sec_group(self, template):
-        raise Exception("Must implement _build_sec_group!")
+    def _build_security_group(self, template, vpc):
+        raise Exception("Must implement _build_security_group!")
 
-    def _build_template(self, template):
+    def _build_template(self, template, vpc):
 
         t = template
-        sg = self._build_sec_group(self, t)
+        sg = self._build_security_group(t, vpc)
 
         t.add_output([
             Output(
-                '{}SecurityGroup'.format(self.name)
+                '{}SecurityGroup'.format(self.name),
+                Value=Ref(sg)
             )
         ])
 
-    def output_sec_group(self):
+    def output_security_group(self):
         return "{}{}SecurityGroup".format(
             self.stack.get_stack_name(),
             self.name
         )
 
+class SSHSecurityGroup(SecurityGroup):
 
-class AllPortsSecGroup(SecGroup):
+    def __init__(self, name="SSH"):
+
+        super(SSHSecurityGroup, self).__init__(name)
+
+        self.allowed_cidrs = []
+        self.allow_cidr('0.0.0.0/0')
+        self.ssh_port = 22
+
+    def allow_cidr(self, cidr):
+        self.allowed_cidrs.append(cidr)
+
+    def _build_security_group(self, t, vpc):
+
+        rules = []
+
+        for c in self.allowed_cidrs:
+            rules.append(ec2.SecurityGroupRule(
+                CidrIp=c,
+                ToPort=self.ssh_port,
+                FromPort=self.ssh_port,
+                IpProtocol='tcp'
+                ))
+
+        sg = t.add_resource(ec2.SecurityGroup(
+            '{}SecurityGroup'.format(self.name),
+            GroupDescription="{} SSH Security Group".format(self.name),
+            GroupName="{}SecurityGroup".format(self.name),
+            VpcId=Ref(vpc),
+            SecurityGroupIngress=rules
+            ))
+
+        return sg
+
+class WebSecurityGroup(SecurityGroup):
+
+    def __init__(self, name="Web"):
+
+        super(WebSecurityGroup, self).__init__(name)
+
+        self.http_port = 80
+        self.https_port = 443
+
+    def _build_security_group(self, t, vpc):
+
+        sg = t.add_resource(ec2.SecurityGroup(
+            "{}SecurityGroup".format(self.name),
+            GroupName="{}SecurityGroup".format(self.name),
+            GroupDescription="{} Web Security Group".format(self.name),
+            VpcId=Ref(vpc),
+            SecurityGroupIngress=[
+                ec2.SecurityGroupRule(
+                    CidrIp='0.0.0.0/0',
+                    ToPort=self.http_port,
+                    FromPort=self.http_port,
+                    IpProtocol='tcp'
+                ),
+                ec2.SecurityGroupRule(
+                    CidrIp='0.0.0.0/0',
+                    ToPort=self.https_port,
+                    FromPort=self.https_port,
+                    IpProtocol='tcp'
+                )
+            ]))
+
+        return sg
+
+
+class AllPortsSecurityGroup(SecurityGroup):
 
     def __init__(self, name):
 
-        super(AllPortsSecGroup, self).__init(name)
+        super(AllPortsSecurityGroup, self).__init__(name)
 
-    def _build_sec_group(self, template):
-        pass
+    def _build_security_group(self, template, vpc):
+
+        t = template
+
+        sg = t.add_resource(ec2.SecurityGroup(
+            '{}AllPortsSecurityGroup'.format(self.name),
+            VpcId=Ref(vpc),
+            GroupName='{}AllPortsSecurityGroup'.format(self.name),
+            GroupDescription="{} All Ports Security Group ".format(self.name),
+            SecurityGroupIngress=[
+                ec2.SecurityGroupRule(
+                    CidrIp='0.0.0.0/0',
+                    ToPort="-1",
+                    FromPort="-1",
+                    IpProtocol="-1"
+                )
+            ]
+        ))
+
+        return sg
 
 
 class VPCStack(BaseStack, SoloStack):
@@ -60,7 +147,7 @@ class VPCStack(BaseStack, SoloStack):
 
         self.defaults.update(kwargs)
 
-        self.sec_groups = []
+        self.security_groups = []
         self.base_cidr = "10.0"
         self.enable_dns = True,
         self.enable_dns_hostnames = True
@@ -99,14 +186,18 @@ class VPCStack(BaseStack, SoloStack):
             port_a, port_b, proto, access, weight
         )})
 
-    def add_sec_group(self, secgroup):
+    def add_security_group(self, secgroup):
 
-        if not isinstance(secgroup, SecGroup):
+        if not isinstance(secgroup, SecurityGroup):
             raise Exception("Security group must extend SecGroup")
 
         secgroup.stack = self
 
-        self.sec_groups.append(secgroup)
+        self.security_groups.append(secgroup)
+
+    def find_security_group(self, clazz, name=None):
+
+        return self.find_class_in_list(self.security_groups, clazz, name)
 
     def build_template(self):
 
@@ -319,8 +410,8 @@ class VPCStack(BaseStack, SoloStack):
             ])
 
         # build security groups
-        for sg in self.sec_groups:
-            sg._build_template(t)
+        for sg in self.security_groups:
+            sg._build_template(t, vpc)
 
         return t
 

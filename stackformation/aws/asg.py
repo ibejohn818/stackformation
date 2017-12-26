@@ -46,4 +46,8 @@ class ASGStack(BaseStack):
             Description='{} Instance Type'.format(self.stack_name)
         ))
 
+        # launch = t.add_resource(autoscaling.LaunchConfiguration(
+            # '{}LaunchConfig'.format(self.stack_name),
+
+
         return t
