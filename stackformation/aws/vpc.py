@@ -43,7 +43,6 @@ class SSHSecurityGroup(SecurityGroup):
         super(SSHSecurityGroup, self).__init__(name)
 
         self.allowed_cidrs = []
-        self.allow_cidr('0.0.0.0/0')
         self.ssh_port = 22
 
     def allow_cidr(self, cidr):
@@ -52,6 +51,10 @@ class SSHSecurityGroup(SecurityGroup):
     def _build_security_group(self, t, vpc):
 
         rules = []
+
+        # if no cidrs were added add wildcard
+        if len(self.allowed_cidrs) == 0:
+            self.allow_cidr('0.0.0.0/0')
 
         for c in self.allowed_cidrs:
             rules.append(ec2.SecurityGroupRule(
@@ -194,6 +197,8 @@ class VPCStack(BaseStack, SoloStack):
         secgroup.stack = self
 
         self.security_groups.append(secgroup)
+
+        return secgroup
 
     def find_security_group(self, clazz, name=None):
 
