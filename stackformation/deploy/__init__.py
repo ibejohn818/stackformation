@@ -1,5 +1,8 @@
 import re
+import time
+import logging
 
+logger = logging.getLogger(__name__)
 
 def match_stack(selector, stack):
 
@@ -96,10 +99,20 @@ class DeployStacks(Deploy):
 
         stacks = infra.get_stacks()
 
-        for s in stacks:
-            if selector and not match_stack(selector, s):
+        for stack in stacks:
+            if selector and not match_stack(selector, stack):
                 continue;
 
-            print(s.start_deploy(infra))
+            dependent_stacks = infra.get_dependent_stacks(stack)
+
+            for k, stk in dependent_stacks.items():
+                stk.load_stack_outputs(stack.infra)
+
+            print(stack.start_deploy(infra, stack.infra.context))
+            time.sleep(2)
+
+            while stack.deploying(infra):
+                pass
+            logger.info("{} DEPLOY COMPLETE".format(stack.get_stack_name()))
 
 

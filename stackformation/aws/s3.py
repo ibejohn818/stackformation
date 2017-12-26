@@ -18,6 +18,7 @@ class BaseS3Bucket(object):
         self.config ={}
         self.versioning = False
         self.public_read = False
+        self.stack = None
 
     def output_bucket_name(self):
         return "{}{}BucketName".format(
@@ -83,8 +84,10 @@ class S3Stack(BaseStack):
         self.buckets.append(bucket)
         return bucket
 
-    def find_bucket(self, name):
-        pass
+    def find_bucket(self, clazz, name=None):
+
+        return self.find_class_in_list(self.buckets, clazz, name)
+
 
     def build_template(self):
 
