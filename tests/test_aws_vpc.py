@@ -46,6 +46,33 @@ def test_base_sec_group(prod_infra):
     assert "Must implement" in str(e)
 
 
+def test_find_sec_group(prod_infra):
+
+    infra = prod_infra[0]
+    prod_infra = prod_infra[1]
+
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+
+    ssh_sg = vpc_stack.add_security_group(vpc.SSHSecurityGroup("SSH"))
+    web_sg = vpc_stack.add_security_group(vpc.WebSecurityGroup("Web"))
+
+    find_ssh = vpc_stack.find_security_group(vpc.SSHSecurityGroup)
+    find_web = vpc_stack.find_security_group(vpc.WebSecurityGroup)
+
+    assert isinstance(find_ssh, vpc.SSHSecurityGroup)
+    assert isinstance(find_web, vpc.WebSecurityGroup)
+
+def test_add_sec_group(prod_infra):
+
+    infra = prod_infra[0]
+    prod_infra = prod_infra[1]
+
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+
+    with pytest.raises(Exception) as e:
+        vpc_stack.add_security_group(infra)
+
+
 def test_ssh_sec_group(prod_infra):
 
     infra = prod_infra[0]
@@ -100,3 +127,20 @@ def test_web_sec_group(prod_infra):
     assert sg['Properties']['SecurityGroupIngress'][1]['CidrIp'] == '0.0.0.0/0'
 
     assert web_sg.output_security_group() == "ProdTestVpcWebSecurityGroup"
+
+def test_all_ports_sec_group(prod_infra):
+
+    infra = prod_infra[0]
+    prod_infra = prod_infra[1]
+
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+
+    ap_sg = vpc_stack.add_security_group(vpc.AllPortsSecurityGroup("Test"))
+
+    t = vpc_stack.build_template()
+
+    sg = t.resources['TestAllPortsSecurityGroup'].to_dict()
+
+    assert sg['Properties']['SecurityGroupIngress'][0]['ToPort'] == '-1'
+    assert sg['Properties']['SecurityGroupIngress'][0]['FromPort'] == '-1'
+    assert sg['Properties']['SecurityGroupIngress'][0]['CidrIp'] == '0.0.0.0/0'
