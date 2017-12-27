@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class Deploy(object):
     """
-
+        Base deploy class
     """
     def cli_confirm(self, infra, selector=[]):
 
@@ -39,7 +39,9 @@ class Deploy(object):
 
 
 class SerialDeploy(Deploy):
-
+    """
+    Sequential deployment
+    """
     def deploy(self, infra, selector=False):
 
         stacks = infra.get_stacks()

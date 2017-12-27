@@ -109,8 +109,7 @@ class CustomPolicy(IAMPolicy):
 
     Args:
         name (str): policy name
-        statements (List[:obj:`awacs.aws.Statement`]): List of policy
-            statement objects.
+        statements (List[:obj:`awacs.aws.Statement`]): List of policy statement objects.
     """
 
     def __init__(self, name, statements=None):

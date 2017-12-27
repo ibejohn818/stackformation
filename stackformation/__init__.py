@@ -84,17 +84,38 @@ class BotoSession():
 
 
 class Context(object):
+    """Container of variables to pass between Infra's and Stack's
+
+    Attributes:
+        vars (dict): containers of variables
+    """
 
     def __init__(self):
         self.vars = {}
-        self.sessions = {}
 
     def get_var(self, name):
+        """Return variable
+
+        Args:
+            name (str): Name of the variable to return
+
+        Returns:
+            var (mixed): Variable stored under name
+
+        """
+
         if not self.vars.get(name):
             return False
         return self.vars.get(name)
 
     def add_vars(self, new):
+        """Add vars to the context
+
+        Args:
+            new (dict): dict of variables to add to the context
+
+        """
+
         self.vars.update(new)
 
     def check_var(self, name):
@@ -109,8 +130,8 @@ class StackComponent(object):
 
     def get_full_name(self):
         return "{}{}".format(
-            self.prefix.capitalize(),
-            self.name.captitalize()
+            ''.join([i.capitalize() for i in self.prefix]),
+            self.name.capitalize()
         )
 
 
@@ -127,6 +148,7 @@ class Infra(object):
         self.input_vars = {}
         self.output_vars = {}
         self.context = Context()
+        self.amis = []
 
     def add_var(self, name, value):
         return self.context.update({name: value})
@@ -192,7 +214,7 @@ class Infra(object):
             stacks.append(stack)
 
         for infra in self.sub_infras:
-            stacks.extend(infra.get_stacks())
+            stacks.extend(infra.list_stacks())
 
         def _cmp(x):
             return x.weight
@@ -248,6 +270,25 @@ class Infra(object):
 
         return None
 
+    def add_ami(self, ami):
+
+        ami.prefix = self.prefix
+        ami.boto_session = self.boto_session
+        self.amis.append(ami)
+        return ami
+
+
+    def list_amis(self):
+
+        amis = []
+
+        for ami in self.amis:
+            amis.append(ami)
+
+        for infra in self.sub_infras:
+            amis.extend(infra.list_amis())
+
+        return amis
 
 class SoloStack():
     pass
@@ -263,8 +304,6 @@ class BaseStack(StackComponent):
             name (str): Name of the stack
             weight (int): Weight is used to order stacks in a list
 
-        Returns:
-            void
         """
 
         super(BaseStack, self).__init__(name)

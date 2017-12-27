@@ -38,6 +38,15 @@ class EC2CpuBaseAlarm(Alarm):
         }
 
 class EC2HighCpuAlarm(EC2CpuBaseAlarm):
+    """EC2 High CPU Alarm
+
+    Args:
+        ec2_stack (:obj:`stackformation.aws.ec2.EC2Stack`): EC2 Stack to attach alarm to
+
+    Returns:
+        void
+
+    """
 
     def __init__(self, ec2_stack):
         name = '{}HighCpuAlarm'.format(ec2_stack.get_stack_name())
