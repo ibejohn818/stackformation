@@ -36,6 +36,33 @@ class SecurityGroup(object):
             self.name
         )
 
+
+class SelfReferenceSecurityGroup(SecurityGroup):
+
+    def __init__(self):
+        name = "SelfReferenceSecurityGroup"
+        super(SelfReferenceSecurityGroup, self).__init__(name)
+
+    def _build_security_group(self, t, vpc):
+
+        sg = t.add_resource(ec2.SecurityGroup(
+            '{}'.format(self.name),
+            GroupDescription="{} Self Reference Security Group".format(self.stack.get_stack_name()),
+            GroupName="{} {}".format(self.stack.get_stack_name(), self.name),
+            VpcId=Ref(vpc),
+            SecurityGroupIngress=[]
+        ))
+
+        t.add_resource(ec2.SecurityGroupIngress(
+            '{}Ingress'.format(self.name),
+                    ToPort='-1',
+                    FromPort='-1',
+                    IpProtocol='-1',
+                    SourceSecurityGroupId=Ref(sg),
+                    GroupId=Ref(sg),
+        ))
+        return sg
+
 class SSHSecurityGroup(SecurityGroup):
 
     def __init__(self, name="SSH"):
