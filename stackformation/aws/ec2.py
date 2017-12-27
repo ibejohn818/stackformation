@@ -1,6 +1,5 @@
 from stackformation import BaseStack
 import logging
-from stackformation import 
 from colorama import Fore, Style, Back
 from troposphere import ec2
 from troposphere import (
@@ -49,9 +48,18 @@ class EC2Stack(BaseStack):
 
         ud_key = "{}UserData".format(self.stack_name)
 
-        if context.check_var(ud_key):
-            data = context.get_var(ud_key)
-            context.add_vars({"{}{}".format(ud_key,"0"): data})
+        if not context.check_var(ud_key):
+            return
+
+        user_data = context.get_var(ud_key)
+
+        n = 4096
+
+        ud_list = [user_data[i:i+n] for i in range(0, len(user_data), n)]
+
+        for k, v in enumerate(ud_list):
+            varname = "{}{}".format(ud_key, k)
+            context.add_vars({varname: v})
 
 
     def build_template(self):

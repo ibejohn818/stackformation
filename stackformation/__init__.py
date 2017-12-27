@@ -22,22 +22,22 @@ __version__ = '0.1.0'
 logger = logging.getLogger(__name__)
 
 status_to_color = {
-    'CREATE_IN_PROGRESS': Fore.CYAN,
+    'CREATE_IN_PROGRESS': Fore.YELLOW,
     'CREATE_FAILED': Fore.RED,
     'CREATE_COMPLETE': Fore.GREEN,
     'ROLLBACK_IN_PROGRESS': Fore.RED,
     'ROLLBACK_FAILED': Fore.RED,
     'ROLLBACK_COMPLETE': Fore.RED,
-    'DELETE_IN_PROGRESS': Fore.CYAN,
+    'DELETE_IN_PROGRESS': Fore.YELLOW,
     'DELETE_FAILED': Fore.RED,
     'DELETE_COMPLETE': Fore.GREEN,
     'UPDATE_FAILED': Fore.RED,
-    'UPDATE_IN_PROGRESS': Fore.CYAN,
-    'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS': Fore.CYAN,
+    'UPDATE_IN_PROGRESS': Fore.YELLOW,
+    'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
     'UPDATE_COMPLETE': Fore.GREEN,
     'UPDATE_ROLLBACK_IN_PROGRESS': Fore.RED,
     'UPDATE_ROLLBACK_FAILED': Fore.RED,
-    'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS': Fore.CYAN,
+    'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
     'UPDATE_ROLLBACK_COMPLETE': Fore.GREEN,
 }
 
@@ -419,12 +419,13 @@ class BaseStack(StackComponent):
 
         """
 
-        cf = infra.boto_session.client("cloudformation")
         present = True
+
+        # check if the stack has been deployed
+        cf = infra.boto_session.client("cloudformation")
+
         try:
             chk = cf.describe_stacks(StackName=self.get_remote_stack_name())
-            print(chk)
-
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "ValidationError":
                 present = False
