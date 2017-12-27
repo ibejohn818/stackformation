@@ -32,6 +32,19 @@ def test_vpc(prod_infra):
     assert vpc_stack.output_private_routetable() == "ProdTestVpcPrivateRouteTable"
     assert vpc_stack.output_default_acl_table() == "ProdTestVpcDefaultAclTable"
 
+def test_base_sec_group(prod_infra):
+
+    infra = prod_infra[0]
+    prod_infra = prod_infra[1]
+
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+
+    base_sg = vpc_stack.add_security_group(vpc.SecurityGroup('base'))
+
+    with pytest.raises(Exception) as e:
+        vpc_stack.build_template()
+    assert "Must implement" in str(e)
+
 
 def test_ssh_sec_group(prod_infra):
 
@@ -62,3 +75,22 @@ def test_ssh_sec_group(prod_infra):
     assert sg_dict['Properties']['SecurityGroupIngress'][0]['ToPort'] == 22
     assert sg_dict['Properties']['SecurityGroupIngress'][0]['FromPort'] == 22
     assert sg_dict['Properties']['SecurityGroupIngress'][0]['CidrIp'] == '1.2.3.4/5'
+
+    assert ssh_sg.output_security_group() == "ProdTestVpcSSHSecurityGroup"
+
+
+def test_web_sec_group(prod_infra):
+
+    infra = prod_infra[0]
+    prod_infra = prod_infra[1]
+
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+
+    web_sg = vpc_stack.add_security_group(vpc.WebSecurityGroup("Web"))
+
+    t = vpc_stack.build_template()
+
+    sg = t.resources['WebSecurityGroup'].to_dict()
+
+    assert sg['Properties']['SecurityGroupIngress'][0]['ToPort'] == 80
+    assert sg['Properties']['SecurityGroupIngress'][0]['FromPort'] == 80
