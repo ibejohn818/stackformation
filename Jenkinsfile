@@ -43,7 +43,7 @@ node {
                 echo "Cleaning"
                 sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} make clean"
                 echo "Build DIST Package"
-                sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} python3 setup.py dist"
+                sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} python3 setup.py sdist"
 
                 withCredentials([usernamePassword(credentialsId: 'ibejohn818PyPi', passwordVariable: 'PYPIPASSWD', usernameVariable: 'PYPIUSER')]) {
                     echo "Send to PyPi"
