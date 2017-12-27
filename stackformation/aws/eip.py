@@ -35,9 +35,11 @@ class EIP(object):
         ])
 
     def output_eip(self):
+        """Return EIP"""
         return "{}{}EIP".format(self.stack.get_stack_name(),self.name)
 
     def output_allocation_id(self):
+        """Return EIP Allocation ID"""
         return "{}{}AllocationId".format(self.stack.get_stack_name(), self.name)
 
 

@@ -6,9 +6,12 @@ import click
 import imp
 import stackformation.deploy as dep
 import logging
+import os
 from stackformation.utils import (match_stack)
+import jinja2
+from colorama import Fore, Style, Back
 
-INFRA_FILE="infra.py"
+INFRA_FILE = "infra.py"
 
 
 @click.group()
@@ -20,7 +23,42 @@ def main():
 def stacks():
     pass
 
-@stacks.command()
+@main.group()
+def image():
+    pass
+
+@image.command(help="Build AMI's")
+def build():
+
+    infra = load_infra_file()
+
+
+
+@stacks.command(name='list')
+def list_stack():
+
+    infra = load_infra_file()
+
+    stacks = infra.list_stacks()
+
+    for stack in stacks:
+        click.echo("{}Stack:{} {} {}[{}]{}".format(
+                    Style.BRIGHT,
+                    Style.RESET_ALL+Fore.GREEN,
+                    stack.get_stack_name(),
+                    Fore.YELLOW,
+                    stack.get_remote_stack_name(),
+                    Style.RESET_ALL
+                    ))
+        click.echo("{}Type: {}{}{}".format(
+                    Style.BRIGHT,
+                    Style.RESET_ALL+Fore.CYAN,
+                    stack.__class__,
+                    Style.RESET_ALL
+                    ))
+
+
+@stacks.command(help='Deploy stacks')
 @click.argument('selector', nargs=-1)
 def deploy(selector):
 
@@ -35,9 +73,11 @@ def deploy(selector):
 
     deploy.deploy(infra, selector)
 
-@stacks.command()
+
+@stacks.command(help='Dump Cloudformation template')
+@click.option("--yaml", is_flag=True, default=False)
 @click.argument('selector', nargs=-1)
-def template(selector):
+def template(selector, yaml):
 
     selector = list(selector)
 
@@ -52,10 +92,13 @@ def template(selector):
             results.append(stack)
 
     for stack in results:
+
         t = stack.build_template()
-        print(t.to_json())
 
-
+        if yaml:
+            print(t.to_yaml())
+        else:
+            print(t.to_json())
 
 
 @stacks.command(help="List stack dependencies")
@@ -65,14 +108,38 @@ def dependencies():
 
     stacks = infra.list_stacks()
 
+    env = jinja_env()
+
+    results = []
 
     for stack in stacks:
+
         deps = infra.get_dependent_stacks(stack)
-        click.echo("Stack: {}".format(stack.get_stack_name()))
-        click.echo("Dependencies:")
-        for k, v in deps.items():
-            click.echo(" -{} ({})".format(k, v))
-        click.echo('----------------')
+
+        result = {
+            'Stack': (stack.get_stack_name(), str(stack).split(' ')[0][1:]),
+            'Dependencies': [(k, str(v).split(' ')[0][1:]) for k, v in deps.items()]
+        }
+        results.append(result)
+
+    t = env.get_template("stack-dependencies.j2")
+    context = {
+        'results': results
+    }
+    view = t.render(context)
+    click.echo(view)
+
+
+def jinja_env():
+
+    path = os.path.dirname(os.path.realpath(__file__))
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(
+            searchpath="{}/templates/".format(path)))
+
+    return env
+
 
 def load_infra_file():
 
@@ -90,7 +157,7 @@ def configure_logging():
 
     stream = logging.StreamHandler()
     stream.setFormatter(
-            logging.Formatter('%(levelname)s - %(message)s'))
+        logging.Formatter('%(levelname)s - %(message)s'))
     logger.addHandler(stream)
 
     # config boto logger
@@ -101,6 +168,7 @@ def configure_logging():
     for name in boto_silences:
         boto_logger = logging.getLogger(name)
         boto_logger.setLevel(logging.WARN)
+
 
 if __name__ == "__main__":
     main()
