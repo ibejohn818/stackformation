@@ -17,6 +17,7 @@ node {
 
         stage("Build Test Image") {
             sh "docker build -f Dockerfile-test -t ${img_tag} ."
+            echo sh(returnStdout: true, script: 'env')
         }
 
         stage("Run Tests") {
