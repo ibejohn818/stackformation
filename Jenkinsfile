@@ -17,6 +17,7 @@ node {
 
         stage("Build Test Image") {
             sh "docker build -f Dockerfile-test -t ${img_tag} ."
+            echo sh(returnStdout: true, script: 'env')
         }
 
         stage("Run Tests") {
@@ -33,6 +34,25 @@ node {
                 }
             } else {
                 echo "Skipping coverage report..."
+            }
+        }
+
+        if (env.TAG_NAME) {
+            stage("Publish To PyPi") {
+
+                echo "Cleaning"
+                sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} make clean"
+                echo "Build DIST Package"
+                sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} python3 setup.py sdist"
+
+                withCredentials([usernamePassword(credentialsId: '***REMOVED***', passwordVariable: 'PYPIPASSWD', usernameVariable: 'PYPIUSER')]) {
+                    echo "Send to PyPi"
+
+                    def dist_name = "jh-stackformation-${env.TAG_NAME}.tar.gz"
+
+                    sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} twine upload dist/${dist_name} -u ${env.PYPIUSER} -p ${env.PYPIPASSWD}"
+                }
+
             }
         }
 
