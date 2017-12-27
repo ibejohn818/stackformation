@@ -94,3 +94,9 @@ def test_web_sec_group(prod_infra):
 
     assert sg['Properties']['SecurityGroupIngress'][0]['ToPort'] == 80
     assert sg['Properties']['SecurityGroupIngress'][0]['FromPort'] == 80
+    assert sg['Properties']['SecurityGroupIngress'][0]['CidrIp'] == '0.0.0.0/0'
+    assert sg['Properties']['SecurityGroupIngress'][1]['ToPort'] == 443
+    assert sg['Properties']['SecurityGroupIngress'][1]['FromPort'] ==  443
+    assert sg['Properties']['SecurityGroupIngress'][1]['CidrIp'] == '0.0.0.0/0'
+
+    assert web_sg.output_security_group() == "ProdTestVpcWebSecurityGroup"
