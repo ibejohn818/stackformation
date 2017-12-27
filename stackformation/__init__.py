@@ -290,6 +290,8 @@ class Infra(object):
 
         return amis
 
+
+
 class SoloStack():
     pass
 
@@ -370,10 +372,10 @@ class BaseStack(StackComponent):
     def get_stack_name(self):
 
         return "{}{}{}{}".format(
-            ''.join([i.capitalize() for i in self.infra.prefix]),
-            self.infra.name.capitalize(),
-            self.stack_name.capitalize(),
-            self.name.capitalize()
+            ''.join([utils.ucfirst(i) for i in self.infra.prefix]),
+            utils.ucfirst(self.infra.name),
+            utils.ucfirst(self.stack_name),
+            utils.ucfirst(self.name)
         )
 
     def get_remote_stack_name(self):
@@ -656,7 +658,15 @@ class BaseStack(StackComponent):
 
         return None
 
-    # def get_dependent_stacks(self, infra):
+    def review(self, infra):
+
+        # get stack dependencies
+        deps = infra.get_dependent_stacks(self)
+
+        cf = self.infra.boto_session.client('cloudformation')
+
+        info = cf.describe_stacks(StackName=self.get_remote_stack_name())
+        print(info['Stacks'][0]['Parameters'])
 
     def build_template(self):
         raise NotImplementedError("Must implement method to extend Stack")
