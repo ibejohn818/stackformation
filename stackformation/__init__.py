@@ -295,16 +295,22 @@ class SoloStack():
 
 
 class BaseStack(StackComponent):
+    """The base for all cloudformation stacks
+
+    Args:
+        name (str): Name of the stack
+        weight (int): Weight is used to order stacks in a list
+
+    Attributes:
+        weight (int): represents stack order in a list
+        infra (:obj:`stackformation.Infra`): Infra obj the stack belongs to
+        stack_name (str): Name of the stack instance
+        _deploy_event (dict): stub to store previous event during deploying() lookups
+        template_components (dict): template components added to stack instance
+
+    """
 
     def __init__(self, name, weight=100, **kwargs):
-        """
-        The base for all cloudformation stacks
-
-        Args:
-            name (str): Name of the stack
-            weight (int): Weight is used to order stacks in a list
-
-        """
 
         super(BaseStack, self).__init__(name)
 
@@ -506,6 +512,44 @@ class BaseStack(StackComponent):
 
         return True
 
+    def start_destroy(self, infra, context):
+
+        present = True
+
+        # check if the stack has been deployed
+        cf = infra.boto_session.client("cloudformation")
+
+        try:
+            chk = cf.describe_stacks(StackName=self.get_remote_stack_name())
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == "ValidationError":
+                present = False
+            else:
+                print(e.response['Error']['Code'])
+                print("FATAL ERROR")
+                exit(1)
+
+        if not present:
+            logger.info("{} Has yet to be created...Skipping...".format(self.get_stack_name()))
+            return
+
+        kw = {
+                'StackName': self.get_remote_stack_name()
+            }
+
+        try:
+                res = cf.delete_stack(**kw)
+                logger.info('DESTROYING STACK: {}'.format(self.get_stack_name()))
+        except botocore.exceptions.ClientError as e:
+            err = e.response['Error']
+            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):
+                return False
+            else:
+                raise e
+
+        return True
+
+
     def deploying(self, infra):
 
         cf = infra.boto_session.client("cloudformation")
@@ -622,3 +666,37 @@ class TemplateComponent(object):
 
     def text(self, infra, context):
         raise Exception("Must implement get_template method")
+
+class PackerImage(object):
+
+    def __init__(self, name):
+
+        self.name = name
+        self.roles = {}
+        self.os_type = None
+        self.boto_session = None
+        self.stack = None
+
+    def add_role(self, role_name, vars = {}):
+        """Add ansible role to image
+
+        Args:
+            role_name (str): the name of the role
+            vars (dict}: dict of role variables
+
+        """
+        self.roles.update({role_name: vars})
+
+    def del_role(self, role_name):
+        if role_name in self.roles:
+            del self.roles[role_name]
+
+    def build(self):
+        """Abstract method to trigger the build
+        """
+        raise Exception("Need to implement build()")
+
+    def describe(self):
+        """Describe the image build
+        """
+        raise Exception("Must implement describe()")

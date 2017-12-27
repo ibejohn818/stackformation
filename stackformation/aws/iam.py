@@ -1,6 +1,7 @@
 from stackformation import BaseStack
 from awacs import aws
 import awacs.sts
+import awacs.s3
 import troposphere.iam as iam
 from troposphere import (
     FindInMap, GetAtt, Join,
@@ -92,9 +93,9 @@ class IAMRole(IAMBase):
 
 class IAMPolicy(IAMBase):
 
-    def __init__(self, name):
+    def __init__(self, name=''):
 
-        self.name = name
+        super(IAMPolicy, self).__init__(name)
         self.statements = []
 
     def _bind_role(self, template, role):
@@ -197,6 +198,42 @@ class EC2AdminProfile(EC2Profile):
         # self.principals = ["*"]
         self.add_managed_policy("AdministratorAccess")
 
+class EC2FullAccess(IAMPolicy):
+
+    def _bind_role(self, template, role):
+
+        role.Policies.append(iam.Policy(
+            'ec2fullaccess',
+            PolicyName='ec2fullaccess',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Action=[awacs.aws.Action("ec2","*")],
+                        Effect=aws.Allow,
+                        Resource=["*"]
+                    )
+                ]
+            )
+        ))
+
+class ELBFullAccess(IAMPolicy):
+
+    def _bind_role(self, template, role):
+
+        role.Policies.append(iam.Policy(
+            'elbfullaccess',
+            PolicyName='elbfullaccess',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Action=[awacs.aws.Action("elasticloadbalancing","*")],
+                        Effect=aws.Allow,
+                        Resource=["*"]
+                    )
+                ]
+            )
+        ))
+
 
 class S3FullBucketAccess(IAMPolicy):
 
@@ -243,6 +280,74 @@ class S3FullBucketAccess(IAMPolicy):
                     ),
                 ]
             )))
+
+
+class S3ReadBucketAccess(IAMPolicy):
+
+    def __init__(self, buckets):
+        self.buckets = []
+
+        if not isinstance(buckets, list):
+            buckets = [buckets]
+
+        self.add_bucket(buckets)
+
+    def add_bucket(self, bucket):
+        if isinstance(bucket, list):
+            self.buckets.extend(bucket)
+        else:
+            self.buckets.append(bucket)
+
+    def _bind_role(self, t, r):
+
+        brefs = []
+
+        for b in self.buckets:
+            bn = b.output_bucket_name()
+            if bn in t.parameters:
+                brefs.append(t.parameter[bn])
+            else:
+                brefs.append(t.add_parameter(Parameter(
+                    bn,
+                    Type='String'
+                )))
+
+        r.Policies.append(iam.Policy(
+            's3readaccess',
+            PolicyName='s3readaccess',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Effect=aws.Allow,
+                        Action=[
+                            awacs.s3.GetObject,
+                            awacs.s3.ListBucket,
+                            awacs.s3.ListBucketVersions,
+                            awacs.aws.Action('s3','GetObject*'),
+                            awacs.aws.Action('s3', 'ListAllMyBuckets')
+                        ],
+                        Resource=[
+                            Join("", ["arn:aws:s3:::", Ref(i), "/*"])
+                            for i in brefs
+                        ]
+                    ),
+                    aws.Statement(
+                        Effect=aws.Allow,
+                        Action=[
+                            awacs.s3.GetObject,
+                            awacs.s3.ListBucket,
+                            awacs.s3.ListBucketVersions,
+                            awacs.aws.Action('s3','GetObject*'),
+                            awacs.aws.Action('s3', 'ListAllMyBuckets')
+                        ],
+                        Resource=[
+                            Join("", ["arn:aws:s3:::", Ref(i), "*"])
+                            for i in brefs
+                        ]
+                    )
+                ]
+            )
+        ))
 
 
 class IAMStack(BaseStack):

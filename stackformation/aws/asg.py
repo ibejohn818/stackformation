@@ -5,16 +5,19 @@ from troposphere import (
         FindInMap, GetAtt, Join,
         Parameter, Output, Ref,
         Select, Template,
-        GetAZs, Export
+        GetAZs, Export, Tags
 )
 
 class ASGStack(BaseStack):
 
-    def __init(self, name):
+    def __init(self, name, vpc):
 
         super(ASGStack, self).__init__("ASG", 400)
 
         self.stack_name = name
+        self.vpc_stack = vpc
+        self.elbs = []
+        self.private_subnet = False
 
 
 
