@@ -25,6 +25,7 @@ class EC2Stack(BaseStack):
         self.private_subnet = False
         self.security_groups = []
         self.ami = 'ami-15e9c770'
+        self.ami = 'ami-597d553c'
         self.use_key = None
         self.volumes = []
 
