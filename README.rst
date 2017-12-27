@@ -3,8 +3,8 @@ StackFormation
 ==============
 
 
-.. image:: https://img.shields.io/pypi/v/stackformation.svg
-        :target: https://pypi.python.org/pypi/stackformation
+.. image:: https://img.shields.io/pypi/v/jh-stackformation.svg
+        :target: https://pypi.python.org/pypi/jh-stackformation
 
 .. image:: https://img.shields.io/travis/ibejohn818/stackformation.svg
         :target: https://travis-ci.org/ibejohn818/stackformation
@@ -26,6 +26,12 @@ and quick prototyping of your infrastructure to different stages IE: DEV, STAGIN
 Optionally, it also enforces an AMI workflow that separates the construction and updating of your AMI's
 using ansible and packer.
 
+
+Installation
+============
+
+pip install jh-stackformation
+
 * Free software: MIT license
 * Documentation: https://stackformation.readthedocs.io.
 
@@ -34,12 +40,4 @@ Features
 --------
 
 * TODO
-
-Credits
----------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
 
