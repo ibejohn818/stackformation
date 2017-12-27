@@ -11,11 +11,17 @@ class Deploy(object):
     """
         Base deploy class
     """
-    def cli_confirm(self, infra, selector=[]):
+    def cli_confirm(self, infra, selector=[], **kwargs):
 
         c = 0
 
-        for stack in infra.get_stacks():
+        defaults = {
+            'reverse': False
+        }
+
+        defaults.update(kwargs)
+
+        for stack in infra.list_stacks(reverse=defaults['reverse']):
             if len(selector)>0 and not match_stack(selector, stack):
                 continue
             c += 1
@@ -36,6 +42,22 @@ class Deploy(object):
             return True
 
         return False
+
+    def destroy(self, infra, selector=False, **kwargs):
+
+        stacks = infra.list_stacks(reverse=True)
+
+        for stack in stacks:
+            if selector and not match_stack(selector, stack):
+                continue;
+
+            start = stack.start_destroy(infra, stack.infra.context)
+            if not start:
+                continue
+            time.sleep(2)
+            while stack.deploying(infra):
+                pass
+            logger.info("DESTROY COMPLETE: {}".format(stack.get_stack_name()))
 
 
 class SerialDeploy(Deploy):

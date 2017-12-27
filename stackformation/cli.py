@@ -73,6 +73,22 @@ def deploy(selector):
 
     deploy.deploy(infra, selector)
 
+@stacks.command(help='Destroy stacks')
+@click.argument('selector', nargs=-1)
+def destroy(selector):
+
+    selector = list(selector)
+
+    infra = load_infra_file()
+
+    deploy = dep.SerialDeploy()
+
+    if not deploy.cli_confirm(infra, selector, reverse=True):
+        exit(0)
+
+    deploy.destroy(infra, selector, reverse=True)
+
+
 
 @stacks.command(help='Dump Cloudformation template')
 @click.option("--yaml", is_flag=True, default=False)
@@ -157,7 +173,7 @@ def configure_logging():
 
     stream = logging.StreamHandler()
     stream.setFormatter(
-        logging.Formatter('%(levelname)s - %(message)s'))
+        logging.Formatter('%(levelname)s ➤ %(message)s'))
     logger.addHandler(stream)
 
     # config boto logger
