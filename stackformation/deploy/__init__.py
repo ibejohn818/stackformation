@@ -1,36 +1,11 @@
 import re
 import time
 import logging
+from stackformation.utils import (match_stack)
+from colorama import Fore, Back, Style
+
 
 logger = logging.getLogger(__name__)
-
-def match_stack(selector, stack):
-
-    if not isinstance(selector, list):
-        selector = selector.split(' ')
-
-    pos = []
-    neg = []
-    sn = stack.get_stack_name()
-    rn = stack.get_remote_stack_name()
-    result = False
-
-    for s in selector:
-        if s[0] == "^":
-            neg.append(s[1:])
-        else:
-            pos.append(s)
-
-    for s in pos:
-        if re.search(s, sn) or re.search(s, rn):
-            result = True
-
-    for s in neg:
-        if re.search(s, sn) or re.search(s, rn):
-            result = False
-
-    return result
-
 
 class Deploy(object):
     """
@@ -44,13 +19,18 @@ class Deploy(object):
             if len(selector)>0 and not match_stack(selector, stack):
                 continue
             c += 1
-            print("Stack: {}/{}".format(stack.get_stack_name(),stack.get_remote_stack_name()))
+            print("Stack: {}{}/{}{}".format(
+                    Fore.CYAN+Style.BRIGHT,
+                    stack.get_stack_name(),
+                    stack.get_remote_stack_name(),
+                    Style.RESET_ALL
+                    ))
 
         if c<=0:
             print("NO STACKS SELCTED!")
             return False
 
-        ans = input("Deploy stacks?: [y/n] \n")
+        ans = input("Deploy stacks?: [y/n] \n".format())
 
         if ans.lower().startswith("y"):
             return True
@@ -59,43 +39,8 @@ class Deploy(object):
 
 
 class SerialDeploy(Deploy):
-    pass
 
-
-class DeployStacks(Deploy):
-
-    def __init__(self):
-        pass
-
-    def fill_params(self, params, context):
-
-        p = []
-
-        for k, v in params.items():
-            val = context.get_var(k)
-            if not val:
-                val = None
-            p.append({
-                'ParameterKey': k,
-                'ParameterValue': val
-            })
-        return p
-
-    def test_match(self, infra):
-
-        stacks = infra.get_stacks()
-
-        sel = "vpc !dev"
-        sel = "prod-jch-vpc"
-
-        for s in stacks:
-            print(s.get_stack_name())
-            print(s.get_remote_stack_name())
-            res = match_stack(sel, s)
-            print(res)
-
-
-    def deploy_stacks(self, infra, selector=False):
+    def deploy(self, infra, selector=False):
 
         stacks = infra.get_stacks()
 
@@ -108,11 +53,11 @@ class DeployStacks(Deploy):
             for k, stk in dependent_stacks.items():
                 stk.load_stack_outputs(stack.infra)
 
-            print(stack.start_deploy(infra, stack.infra.context))
+            start = stack.start_deploy(infra, stack.infra.context)
             time.sleep(2)
 
             while stack.deploying(infra):
                 pass
-            logger.info("{} DEPLOY COMPLETE".format(stack.get_stack_name()))
+            logger.info("DEPLOY COMPLETE: {}".format(stack.get_stack_name()))
 
 

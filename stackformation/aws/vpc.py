@@ -80,30 +80,46 @@ class WebSecurityGroup(SecurityGroup):
 
         super(WebSecurityGroup, self).__init__(name)
 
+        self.allowed_cidrs = []
+
         self.http_port = 80
         self.https_port = 443
 
+    def allow_cidr(self, cidr):
+        self.allowed_cidrs.append(cidr)
+
     def _build_security_group(self, t, vpc):
+
+        if len(self.allowed_cidrs) == 0:
+            self.allow_cidr('0.0.0.0/0')
+
+        rules = []
+
+        for cidr in self.allowed_cidrs:
+                rules.append(
+                            ec2.SecurityGroupRule(
+                                CidrIp=cidr,
+                                ToPort=self.http_port,
+                                FromPort=self.http_port,
+                                IpProtocol='tcp'
+                            )
+                        )
+                rules.append(
+                            ec2.SecurityGroupRule(
+                                CidrIp=cidr,
+                                ToPort=self.https_port,
+                                FromPort=self.https_port,
+                                IpProtocol='tcp'
+                            )
+                        )
 
         sg = t.add_resource(ec2.SecurityGroup(
             "{}SecurityGroup".format(self.name),
             GroupName="{}SecurityGroup".format(self.name),
             GroupDescription="{} Web Security Group".format(self.name),
             VpcId=Ref(vpc),
-            SecurityGroupIngress=[
-                ec2.SecurityGroupRule(
-                    CidrIp='0.0.0.0/0',
-                    ToPort=self.http_port,
-                    FromPort=self.http_port,
-                    IpProtocol='tcp'
-                ),
-                ec2.SecurityGroupRule(
-                    CidrIp='0.0.0.0/0',
-                    ToPort=self.https_port,
-                    FromPort=self.https_port,
-                    IpProtocol='tcp'
-                )
-            ]))
+            SecurityGroupIngress=rules
+            ))
 
         return sg
 
