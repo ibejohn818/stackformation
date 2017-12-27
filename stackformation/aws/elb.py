@@ -1,5 +1,5 @@
 from stackformation import BaseStack
-
+import inflection
 from troposphere import ec2
 import troposphere.elasticloadbalancing as elb
 from troposphere import (
@@ -18,7 +18,10 @@ class ELBStack(BaseStack):
 
         self.stack_name = stack_name
         self.is_public = True
+        self.public_subnets = True
         self.vpc = vpc
+        self.listeners = []
+        self.crosszone = True
 
     def get_scheme(self):
         """
@@ -29,19 +32,32 @@ class ELBStack(BaseStack):
         else:
             return "internal"
 
+    def add_listener(self, proto, port_in, port_out, **kwargs):
+        l = elb.Listener(
+                Protocol=proto,
+                LoadBalancerPort=port_in,
+                InstancePort=port_out
+            )
+
+        if kwargs.get('ssl_id'):
+            l.SSLCertificateId=kwargs.get('ssl_id')
+
+        self.listeners.append(l)
+
+
     def build_template(self):
+
         t = self._init_template()
 
+        if len(self.listeners) <= 0:
+            self.add_listener("HTTP", 80, 80)
+
+
         lb = t.add_resource(elb.LoadBalancer(
-            'ELB{}'.format(self.stack_name),
+            '{}ELB'.format(self.stack_name),
             Scheme=self.get_scheme(),
-            Listeners=[
-                elb.Listener(
-                    LoadBalancerPort="80",
-                    InstancePort='80',
-                    Protocol="HTTP",
-                ),
-            ],
+            Listeners=self.listeners,
+            CrossZone=self.crosszone,
             HealthCheck=elb.HealthCheck(
                 Target=Join("", ["HTTP:", '80', "/"]),
                 HealthyThreshold="3",
@@ -52,32 +68,31 @@ class ELBStack(BaseStack):
         ))
 
 
-        # set the azs based on vpc outputs
-        azs = self.vpc.output_azs()
-        az_params = [
+        if not self.public_subnets:
+            subs = self.vpc.output_private_subnets()
+        else:
+            subs = self.vpc.output_public_subnets()
+
+        sn_params = [
             t.add_parameter(
                 Parameter(
                     i,
                     Type="String"
                 )
             )
-            for i in azs
+            for i in subs
         ]
 
-        lb.AvailabilityZones = [Ref(i) for i in az_params]
+        lb.Subnets = [Ref(i) for i in sn_params]
 
+        t.add_output([
+            Output(
+                '{}ELB'.format(self.stack_name),
+                Value=Ref(lb)
+            )
+        ])
 
-        if not self.is_public:
-            subs = self.vpc.output_private_subnets()
-            sn_params = [
-                t.add_parameter(
-                    Parameter(
-                        i,
-                        Type="String"
-                    )
-                )
-                for i in subs
-            ]
-
-            lb.Subnets = [Ref(i) for i in sn_params]
         return t
+
+    def output_elb(self):
+        return "{}{}ELB".format(self.get_stack_name(), self.stack_name)

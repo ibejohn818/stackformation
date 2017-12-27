@@ -12,6 +12,27 @@ class UserData(TemplateComponent):
         pass
 
 
+class CreateCommonDirs(UserData):
+
+    def __init__(self, name):
+        super(CreateCommonDirs, self).__init__(name)
+
+    def text(self):
+        return """
+mkdir -p /opt/stackformation/serf || true
+        """
+
+class CustomUserData(UserData):
+
+    def __init__(self, name, text):
+
+        super(CustomUserData, self).__init__(name)
+
+        self.text = text
+
+    def text(self):
+        return text
+
 
 class WriteEIP(UserData):
 
@@ -27,6 +48,22 @@ class WriteEIP(UserData):
 echo {{context('%s')}} >> /tmp/testip
         """ % self.eip.output_eip()
 
+
+class EIPInfo(UserData):
+
+    def __init__(self, eip):
+        super(EIPInfo, self).__init__("EIP Info")
+
+        self.eip = eip
+
+    def text(self):
+        return """
+echo {{{{context('{0}')}}}} >  /opt/ip.eip
+echo {{{{context('{1}')}}}} >  /opt/allocation.eip
+    """.format(
+            self.eip.output_eip(),
+            self.eip.output_allocation_id()
+        )
 
 class MountEBS(UserData):
 

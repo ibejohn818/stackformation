@@ -1,4 +1,5 @@
 import jinja2
+import re
 
 
 
@@ -21,3 +22,29 @@ def jinja_env(context, capture_vars=False):
 
     return env, var_capture
 
+def match_stack(selector, stack):
+
+    if not isinstance(selector, list):
+        selector = selector.split(' ')
+
+    pos = []
+    neg = []
+    sn = stack.get_stack_name()
+    rn = stack.get_remote_stack_name()
+    result = False
+
+    for s in selector:
+        if s[0] == "^":
+            neg.append(s[1:])
+        else:
+            pos.append(s)
+
+    for s in pos:
+        if re.search(s, sn) or re.search(s, rn):
+            result = True
+
+    for s in neg:
+        if re.search(s, sn) or re.search(s, rn):
+            result = False
+
+    return result
