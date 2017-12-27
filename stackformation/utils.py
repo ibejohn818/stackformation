@@ -2,8 +2,6 @@ import jinja2
 import re
 
 
-
-
 def jinja_env(context, capture_vars=False):
 
     var_capture = []
@@ -22,8 +20,19 @@ def jinja_env(context, capture_vars=False):
 
     return env, var_capture
 
-def match_stack(selector, stack):
 
+def match_stack(selector, stack):
+    """Match stacks using selector as the comparison var.
+    Strings prefixed with ^ will be treated as negative
+
+    Args:
+        selector (str|list[str]): String tokens or list used for matching
+        stack (:obj:`stackformation.BaseStack`): stack used for comparison. Will match on get_stack_name() and get_remote_stack_name()
+
+    Returns:
+        :obj:`stackformation.BaseStack`: If stack matches
+        bool: False if selector did not match
+    """
     if not isinstance(selector, list):
         selector = selector.split(' ')
 
