@@ -27,14 +27,15 @@ setup_requirements = [
 
 
 setup(
-    name='stackformation',
+    name='jh-stackformation',
     version='0.1.0',
-    description="cloudformation stack library",
+    description="AWS CloudFormation framework",
     long_description=readme + '\n\n' + history,
     author="John Hardy",
     author_email='john@johnchardy.com',
     url='https://github.com/ibejohn818/stackformation',
-    packages=find_packages(include=['stackformation']),
+    # packages=find_packages(include=['stackformation']),
+    packages=find_packages(),
     entry_points={
         'console_scripts': [
             'stackformation=stackformation.cli:main'

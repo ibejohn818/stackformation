@@ -1,11 +1,12 @@
-from stackformation import StackComponent
+from stackformation import (StackComponent, PackerImage)
 import stackformation
 import json
 import os
+import subprocess
+import yaml
 
 
-CWD = os.path.realpath(os.path.dirname(__file__))
-print(stackformation.__file__)
+CWD = os.path.realpath(os.path.dirname(stackformation.__file__)).strip('/')
 
 AMI_INFO={
     'ubuntu': {
@@ -39,6 +40,18 @@ class BaseAmi(StackComponent):
         super(BaseAmi, self).__init__(name)
         self.boto_session = None
         self.os_type = os_type
+
+
+
+
+
+class Ami(PackerImage):
+
+    def __init__(self, name, os_type='aws'):
+
+        super(Ami, self).__init__(name)
+        self.os_type = os_type
+
 
 
     def get_base_ami(self):
@@ -95,7 +108,35 @@ class BaseAmi(StackComponent):
 
         return amis_query['Images'][0]['ImageId']
 
+    def build(self):
+
+        d = [
+            {
+                'roles':[
+                    json.dumps({'Role': 'php-56', 'var':'var', 'var1':'var1'}),
+                    json.dumps({'Role': 'php-56', 'var':'var', 'var1':'var1'})
+                ]
+            }
+        ]
+        print(d)
 
 
-class Ami(BaseAmi):
-    pass
+        with open("test.yaml", "w") as yml:
+            yaml.dump(d, yml, default_flow_style=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
