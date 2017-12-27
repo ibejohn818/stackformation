@@ -31,12 +31,23 @@ def test_ec2_stack(infra):
 
     ec2_stack = prod_infra.add_stack(ec2.EC2Stack("Web", vpc_stack, web_profile))
 
+    ssh_sg = vpc_stack.add_security_group(vpc.SSHSecurityGroup("SSH"))
+
+    ec2_stack.add_security_group(ssh_sg)
+
+    ec2_stack.keypair("testkey")
+
     t = ec2_stack.build_template()
 
     inst = t.resources['WebEC2Instance'].to_dict()
 
+    assert ec2_stack.output_instance() == "ProdTestWebEc2WebEC2Instance"
+
+    assert inst['Properties']['KeyName'] == 'testkey'
+
     assert inst['Properties']['NetworkInterfaces'][0]['SubnetId'] == {'Ref': 'ProdTestVpcPublicSubnet1'}
 
+    assert inst['Properties']['NetworkInterfaces'][0]['GroupSet'][0] == {'Ref': 'ProdTestVpcSSHSecurityGroup'}
 
     ec2_stack.private_subnet = True
 
