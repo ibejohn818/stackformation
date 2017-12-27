@@ -17,6 +17,7 @@ INFRA_FILE = "infra.py"
 @click.group()
 def main():
     configure_logging()
+    load_configuration()
 
 
 @main.group()
@@ -145,6 +146,13 @@ def dependencies():
     view = t.render(context)
     click.echo(view)
 
+
+def load_configuration():
+
+    HOME = os.environ['HOME']
+
+    if HOME is None:
+        raise Exception("$HOME environment variable needs to be set to save configuration")
 
 def jinja_env():
 
