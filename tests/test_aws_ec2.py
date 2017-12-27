@@ -41,13 +41,13 @@ def test_ec2_stack(infra):
 
     inst = t.resources['WebEC2Instance'].to_dict()
 
-    assert ec2_stack.output_instance() == "ProdTestWebEc2WebEC2Instance"
+    assert ec2_stack.output_instance() == "ProdTestWebEC2WebEC2Instance"
 
     assert inst['Properties']['KeyName'] == 'testkey'
 
-    assert inst['Properties']['NetworkInterfaces'][0]['SubnetId'] == {'Ref': 'ProdTestVpcPublicSubnet1'}
+    assert inst['Properties']['NetworkInterfaces'][0]['SubnetId'] == {'Ref': 'ProdTestVPCPublicSubnet1'}
 
-    assert inst['Properties']['NetworkInterfaces'][0]['GroupSet'][0] == {'Ref': 'ProdTestVpcSSHSecurityGroup'}
+    assert inst['Properties']['NetworkInterfaces'][0]['GroupSet'][0] == {'Ref': 'ProdTestVPCSSHSecurityGroup'}
 
     ec2_stack.private_subnet = True
 
@@ -55,4 +55,4 @@ def test_ec2_stack(infra):
 
     inst = t.resources['WebEC2Instance'].to_dict()
 
-    assert inst['Properties']['NetworkInterfaces'][0]['SubnetId'] == {'Ref': 'ProdTestVpcPrivateSubnet1'}
+    assert inst['Properties']['NetworkInterfaces'][0]['SubnetId'] == {'Ref': 'ProdTestVPCPrivateSubnet1'}
