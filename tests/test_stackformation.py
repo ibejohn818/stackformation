@@ -4,7 +4,6 @@
 """Tests for `stackformation` package."""
 
 import pytest
-from stackformation import stackformation
 from stackformation import (BaseStack, Infra)
 
 
