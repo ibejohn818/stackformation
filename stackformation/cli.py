@@ -36,11 +36,22 @@ def build():
 
 
 @stacks.command(name='list')
-def list_stack():
+@click.argument('selector', nargs=-1)
+def list_stack(selector):
+
+    selector = list(selector)
 
     infra = load_infra_file()
 
     stacks = infra.list_stacks()
+
+    results = []
+
+    for stack in stacks:
+        if match_stack(selector, stack):
+            results.append(stack)
+
+    stacks = results
 
     for stack in stacks:
         click.echo("{}Stack:{} {} {}[{}]{}".format(
@@ -57,6 +68,25 @@ def list_stack():
                     stack.__class__,
                     Style.RESET_ALL
                     ))
+
+@stacks.command(help='Deploy stacks')
+@click.argument('selector', nargs=-1)
+def review(selector):
+
+    selector = list(selector)
+
+    infra = load_infra_file()
+
+    stacks = infra.list_stacks()
+
+    results = []
+
+    for stack in stacks:
+        if match_stack(selector, stack):
+            results.append(stack)
+
+    for stack in results:
+        stack.review(infra)
 
 
 @stacks.command(help='Deploy stacks')
@@ -153,6 +183,8 @@ def load_configuration():
 
     if HOME is None:
         raise Exception("$HOME environment variable needs to be set to save configuration")
+
+
 
 def jinja_env():
 

@@ -27,10 +27,10 @@ def test_vpc(prod_infra):
     assert len(vpc_stack.output_azs()) == 3
     assert len(vpc_stack.output_private_subnets()) == 3
     assert len(vpc_stack.output_public_subnets()) == 3
-    assert vpc_stack.output_vpc() == "ProdTestVpcVpcId"
-    assert vpc_stack.output_public_routetable() == "ProdTestVpcPublicRouteTable"
-    assert vpc_stack.output_private_routetable() == "ProdTestVpcPrivateRouteTable"
-    assert vpc_stack.output_default_acl_table() == "ProdTestVpcDefaultAclTable"
+    assert vpc_stack.output_vpc() == "ProdTestVPCVpcId"
+    assert vpc_stack.output_public_routetable() == "ProdTestVPCPublicRouteTable"
+    assert vpc_stack.output_private_routetable() == "ProdTestVPCPrivateRouteTable"
+    assert vpc_stack.output_default_acl_table() == "ProdTestVPCDefaultAclTable"
 
 def test_base_sec_group(prod_infra):
 
@@ -103,7 +103,7 @@ def test_ssh_sec_group(prod_infra):
     assert sg_dict['Properties']['SecurityGroupIngress'][0]['FromPort'] == 22
     assert sg_dict['Properties']['SecurityGroupIngress'][0]['CidrIp'] == '1.2.3.4/5'
 
-    assert ssh_sg.output_security_group() == "ProdTestVpcSSHSecurityGroup"
+    assert ssh_sg.output_security_group() == "ProdTestVPCSSHSecurityGroup"
 
 
 def test_web_sec_group(prod_infra):
@@ -126,7 +126,7 @@ def test_web_sec_group(prod_infra):
     assert sg['Properties']['SecurityGroupIngress'][1]['FromPort'] ==  443
     assert sg['Properties']['SecurityGroupIngress'][1]['CidrIp'] == '0.0.0.0/0'
 
-    assert web_sg.output_security_group() == "ProdTestVpcWebSecurityGroup"
+    assert web_sg.output_security_group() == "ProdTestVPCWebSecurityGroup"
 
 def test_all_ports_sec_group(prod_infra):
 
