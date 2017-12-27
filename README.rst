@@ -6,8 +6,8 @@ StackFormation
 .. image:: https://img.shields.io/pypi/v/jh-stackformation.svg
         :target: https://pypi.python.org/pypi/jh-stackformation
 
-.. image:: https://img.shields.io/travis/ibejohn818/stackformation.svg
-        :target: https://travis-ci.org/ibejohn818/stackformation
+.. image:: https://codecov.io/gh/ibejohn818/stackformation/branch/master/graph/badge.svg
+        :target: https://codecov.io/gh/ibejohn818/stackformation
 
 .. image:: https://readthedocs.org/projects/stackformation/badge/?version=latest
         :target: https://stackformation.readthedocs.io/en/latest/?badge=latest
