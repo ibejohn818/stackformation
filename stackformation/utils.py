@@ -36,10 +36,12 @@ def match_stack(selector, stack):
     if not isinstance(selector, list):
         selector = selector.split(' ')
 
+    selector = [i.lower() for i in selector]
+
     pos = []
     neg = []
-    sn = stack.get_stack_name()
-    rn = stack.get_remote_stack_name()
+    sn = stack.get_stack_name().lower()
+    rn = stack.get_remote_stack_name().lower()
     result = False
 
     for s in selector:
@@ -57,3 +59,26 @@ def match_stack(selector, stack):
             result = False
 
     return result
+
+
+def ucfirst(word):
+    """Uppercase the first letter in a string
+    and error if string starts with an digit
+
+    Args:
+        word (str): the word
+
+    Raises:
+        Exception
+
+    Returns:
+        (str)
+
+    """
+    if len(word) <= 0:
+        return ""
+    if not re.match('^[a-zA-Z]', word):
+        raise Exception("{} Cannot begin with a digit".format(word))
+    ls = list(word)
+    ls[0] = ls[0].upper()
+    return ''.join(ls)
