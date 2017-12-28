@@ -244,7 +244,7 @@ class BaseStack(StackComponent):
         self.before_deploy(context, parameters)
 
         parameters = self.fill_params(parameters, context)
-
+        print(parameters)
         dep_kw = {
             'StackName': self.get_remote_stack_name(),
             'TemplateBody': template.to_json(),
