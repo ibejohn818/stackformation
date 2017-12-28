@@ -37,9 +37,10 @@ def build():
 
 @stacks.command(name='list')
 @click.argument('selector', nargs=-1)
-def list_stack(selector):
+def list_stack(selector=None):
 
-    selector = list(selector)
+    if len(selector) <= 0:
+        selector = None
 
     infra = load_infra_file()
 
@@ -48,7 +49,7 @@ def list_stack(selector):
     results = []
 
     for stack in stacks:
-        if match_stack(selector, stack):
+        if selector is None or match_stack(selector, stack):
             results.append(stack)
 
     stacks = results
@@ -71,9 +72,10 @@ def list_stack(selector):
 
 @stacks.command(help='Deploy stacks')
 @click.argument('selector', nargs=-1)
-def review(selector):
+def review(selector=None):
 
-    selector = list(selector)
+    if len(selector) <= 0:
+        selector = None
 
     infra = load_infra_file()
 
