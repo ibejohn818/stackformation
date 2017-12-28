@@ -1,4 +1,4 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import BaseStack
 from troposphere import ec2
 from troposphere import (
     FindInMap, GetAtt, Join,
@@ -6,7 +6,6 @@ from troposphere import (
     Select, Tags, Template,
     GetAZs, Export, Base64
 )
-
 
 
 class EBSVolume(object):
@@ -18,7 +17,6 @@ class EBSVolume(object):
         self.volume_size = size
         self.volume_type = volume_type
         self.az_index = az_index
-
 
     def _build_volume(self, template, vpc):
 
@@ -32,31 +30,30 @@ class EBSVolume(object):
             az_param = t.add_parameter(Parameter(
                 az,
                 Type='String'
-                ))
+            ))
 
             az_ref = Ref(az_param)
 
         ebs = t.add_resource(ec2.Volume(
-                '{}EBSVolume'.format(self.name),
-                Size=self.volume_size,
-                VolumeType=self.volume_type,
-                AvailabilityZone=az_ref,
-                Tags=Tags(
-                    Name="{} EBS Volume".format(self.name)
-                )
-            ))
+            '{}EBSVolume'.format(self.name),
+            Size=self.volume_size,
+            VolumeType=self.volume_type,
+            AvailabilityZone=az_ref,
+            Tags=Tags(
+                Name="{} EBS Volume".format(self.name)
+            )
+        ))
 
         t.add_output(Output(
-                '{}Volume'.format(self.name),
-                Value=Ref(ebs),
-                Description="{} EBS Volume".format(self.name)
-            ))
+            '{}Volume'.format(self.name),
+            Value=Ref(ebs),
+            Description="{} EBS Volume".format(self.name)
+        ))
         return ebs
 
     def output_volume(self):
         return "{}{}Volume".format(self.stack.get_stack_name(),
-                self.name)
-
+                                   self.name)
 
 
 class EBSStack(BaseStack):
