@@ -15,7 +15,13 @@ INFRA_FILE = "infra.py"
 
 
 @click.group()
-def main():
+@click.option("--infrafile", default=None)
+def main(infrafile=None):
+
+    if infrafile is not None:
+        global INFRA_FILE
+        INFRA_FILE=infrafile
+
     configure_logging()
     load_configuration()
 
@@ -201,9 +207,14 @@ def jinja_env():
 
 def load_infra_file():
 
-    module = imp.load_source('deploy', INFRA_FILE)
+    try:
 
-    infra = module.infra
+        module = imp.load_source('deploy', INFRA_FILE)
+        infra = module.infra
+
+    except Exception as e:
+        click.echo("Infra file ({}) not found!".format(INFRA_FILE))
+        exit(1)
 
     return infra
 
