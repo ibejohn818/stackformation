@@ -1,4 +1,5 @@
 from stackformation.aws.stacks import BaseStack
+from stackformation.aws import PackerImage
 import logging
 from colorama import Fore, Style, Back
 from troposphere import ec2
@@ -24,10 +25,9 @@ class EC2Stack(BaseStack):
         self.iam_profile = iam_profile
         self.private_subnet = False
         self.security_groups = []
-        self.ami = 'ami-15e9c770'
-        self.ami = 'ami-597d553c'
         self.use_key = None
         self.volumes = []
+        self.ami = None
 
     def add_security_group(self, group):
 
@@ -49,18 +49,23 @@ class EC2Stack(BaseStack):
 
         ud_key = "{}UserData".format(self.stack_name)
 
-        if not context.check_var(ud_key):
-            return
+        if context.check_var(ud_key):
 
-        user_data = context.get_var(ud_key)
+            user_data = context.get_var(ud_key)
 
-        n = 4096
+            n = 4096
 
-        ud_list = [user_data[i:i + n] for i in range(0, len(user_data), n)]
+            ud_list = [user_data[i:i + n] for i in range(0, len(user_data), n)]
 
-        for k, v in enumerate(ud_list):
-            varname = "{}{}".format(ud_key, k)
-            context.add_vars({varname: v})
+            for k, v in enumerate(ud_list):
+                varname = "{}{}".format(ud_key, k)
+                context.add_vars({varname: v})
+
+    def set_ami(self, ami):
+        if isinstance(ami, (PackerImage)):
+            self.ami = ami.get_ami()
+        else:
+            self.ami = ami
 
     def build_template(self):
 

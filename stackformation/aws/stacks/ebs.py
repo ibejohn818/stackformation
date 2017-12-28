@@ -73,7 +73,7 @@ class EBSStack(BaseStack):
 
     def find_volume(self, name):
 
-        for v in self.volumes:
+        for v in self.ebs_volumes:
             if v.name == name:
                 return v
 
