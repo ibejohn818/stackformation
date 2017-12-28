@@ -1,4 +1,5 @@
-from stackformation import (StackComponent, PackerImage)
+from stackformation.aws.stacks import (StackComponent)
+from stackformation.aws import (PackerImage)
 import stackformation
 import json
 import os

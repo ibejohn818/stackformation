@@ -1,4 +1,4 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import BaseStack
 from troposphere import (sns, iam, awslambda)
 import awacs.kms
 import awacs.sns
@@ -10,6 +10,7 @@ from troposphere import (
     Select, Tags, Template,
     GetAZs, Export, Base64,
 )
+
 
 class SNSSubscription(object):
 
@@ -25,9 +26,10 @@ class SNSSubscription(object):
 
     def output_subscription(self):
         return "{}{}SNSSubscription".format(
-                self.stack.get_stack_name(),
-                self.name
-                )
+            self.stack.get_stack_name(),
+            self.name
+        )
+
 
 class SNSTopicStack(BaseStack):
 
@@ -37,7 +39,6 @@ class SNSTopicStack(BaseStack):
 
         self.stack_name = name
         self.subscriptions = []
-
 
     def add_subscription(self, subscriber):
         subscriber.stack = self
@@ -61,11 +62,11 @@ class SNSTopicStack(BaseStack):
 
             sub = s.build_subscription(t, topic)
             subr = t.add_resource(sns.SubscriptionResource(
-                    '{}SNSSubscription'.format(s.name),
-                    Protocol=sub[0],
-                    Endpoint=sub[1],
-                    TopicArn=Ref(topic)
-                ))
+                '{}SNSSubscription'.format(s.name),
+                Protocol=sub[0],
+                Endpoint=sub[1],
+                TopicArn=Ref(topic)
+            ))
             t.add_output([
                 Output(
                     '{}SNSSubscription'.format(s.name),
@@ -84,9 +85,10 @@ class SNSTopicStack(BaseStack):
 
     def output_topic(self):
         return "{}{}SNSTopic".format(
-                self.get_stack_name(),
-                self.stack_name
-                )
+            self.get_stack_name(),
+            self.stack_name
+        )
+
 
 class EmailSubscription(SNSSubscription):
 
@@ -99,17 +101,15 @@ class EmailSubscription(SNSSubscription):
         ep = t.add_parameter(Parameter(
             'Input{}SNSEmailAddress'.format(self.name),
             Type='String'
-            ))
+        ))
 
         return ('email', Ref(ep))
-
 
 
 class SlackSubscription(SNSSubscription):
 
     def __init__(self, name):
         super(SlackSubscription, self).__init__(name)
-
 
     def build_subscription(self, t, topic):
 
@@ -120,7 +120,8 @@ class SlackSubscription(SNSSubscription):
                     aws.Statement(
                         Action=[awacs.sts.AssumeRole],
                         Effect=aws.Allow,
-                        Principal=aws.Principal("Service", ["lambda.amazonaws.com"])
+                        Principal=aws.Principal(
+                            "Service", ["lambda.amazonaws.com"])
                     )
                 ]
             ),
@@ -152,25 +153,25 @@ class SlackSubscription(SNSSubscription):
         code = ["import sys"]
         # make lambda function
         fn = t.add_resource(awslambda.Function(
-                '{}SlackTopicFN'.format(self.name),
-                Handler='index.handle',
-                Runtime='python3.6',
-                Role=GetAtt(policy, "Arn"),
-                Code=awslambda.Code(
+            '{}SlackTopicFN'.format(self.name),
+            Handler='index.handle',
+            Runtime='python3.6',
+            Role=GetAtt(policy, "Arn"),
+            Code=awslambda.Code(
                     ZipFile=Join("", code)
-                )
-            ))
+            )
+        ))
 
         t.add_resource(awslambda.Permission(
-                '{}LambdaPerm'.format(self.name),
-                Action='lambda:InvokeFunction',
-                FunctionName=GetAtt(fn, "Arn"),
-                SourceArn=Ref(topic),
-                Principal="sns.amazonaws.com"
-            ))
-
+            '{}LambdaPerm'.format(self.name),
+            Action='lambda:InvokeFunction',
+            FunctionName=GetAtt(fn, "Arn"),
+            SourceArn=Ref(topic),
+            Principal="sns.amazonaws.com"
+        ))
 
         return ("lambda", GetAtt(fn, "Arn"))
+
 
 class SlackTopicStack(SNSTopicStack):
 
@@ -195,7 +196,8 @@ class SlackTopicStack(SNSTopicStack):
                     aws.Statement(
                         Action=[awacs.sts.AssumeRole],
                         Effect=aws.Allow,
-                        Principal=aws.Principal("Service", ["lambda.amazonaws.com"])
+                        Principal=aws.Principal(
+                            "Service", ["lambda.amazonaws.com"])
                     )
                 ]
             ),
@@ -227,36 +229,35 @@ class SlackTopicStack(SNSTopicStack):
         code = ["import sys"]
         # make lambda function
         fn = t.add_resource(awslambda.Function(
-                '{}SlackTopicFN'.format(self.stack_name),
-                Handler='index.handle',
-                Runtime='python3.6',
-                Role=GetAtt(policy, "Arn"),
-                Code=awslambda.Code(
+            '{}SlackTopicFN'.format(self.stack_name),
+            Handler='index.handle',
+            Runtime='python3.6',
+            Role=GetAtt(policy, "Arn"),
+            Code=awslambda.Code(
                     ZipFile=Join("", code)
-                )
-            ))
+            )
+        ))
 
         topic = t.add_resource(sns.Topic(
             "{}SNSTopic".format(self.stack_name),
             TopicName=self.stack_name,
             DisplayName=self.stack_name,
             Subscription=[
-                    sns.Subscription(
-                        Protocol='lambda',
-                        Endpoint=GetAtt(fn, "Arn")
-                    )
+                sns.Subscription(
+                    Protocol='lambda',
+                    Endpoint=GetAtt(fn, "Arn")
+                )
             ],
 
         ))
 
         t.add_resource(awslambda.Permission(
-                '{}LambdaPerm'.format(self.stack_name),
-                Action='lambda:InvokeFunction',
-                FunctionName=GetAtt(fn, "Arn"),
-                SourceArn=Ref(topic),
-                Principal="sns.amazonaws.com"
-            ))
-
+            '{}LambdaPerm'.format(self.stack_name),
+            Action='lambda:InvokeFunction',
+            FunctionName=GetAtt(fn, "Arn"),
+            SourceArn=Ref(topic),
+            Principal="sns.amazonaws.com"
+        ))
 
         t.add_output([
             Output(
@@ -264,6 +265,5 @@ class SlackTopicStack(SNSTopicStack):
                 Value=Ref(topic)
             )
         ])
-
 
         return t

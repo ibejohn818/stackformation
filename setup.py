@@ -5,7 +5,7 @@
 
 from setuptools import setup, find_packages
 import sys
-if sys.version_info < (3,0):
+if sys.version_info < (3, 0):
     sys.exit('Sorry, Only Python 3.x is not supported')
 
 with open('README.rst') as readme_file:
@@ -22,7 +22,8 @@ with open('requirements_dev.txt', 'r') as req:
 
 setup_requirements = [
     'pytest-runner',
-    # TODO(ibejohn818): put setup requirements (distutils extensions, etc.) here
+    # TODO(ibejohn818): put setup requirements (distutils extensions, etc.)
+    # here
 ]
 
 
