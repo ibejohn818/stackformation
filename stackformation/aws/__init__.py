@@ -9,7 +9,7 @@ class PackerImage(object):
         self.boto_session = None
         self.stack = None
 
-    def add_role(self, role_name, vars = {}):
+    def add_role(self, role_name, vars = {}, weight=900):
         """Add ansible role to image
 
         Args:
@@ -17,7 +17,7 @@ class PackerImage(object):
             vars (dict}: dict of role variables
 
         """
-        self.roles.update({role_name: vars})
+        self.roles.update({role_name: {'vars': vars, 'weight': weight}})
 
     def del_role(self, role_name):
         if role_name in self.roles:
@@ -32,3 +32,6 @@ class PackerImage(object):
         """Describe the image build
         """
         raise Exception("Must implement describe()")
+
+    def get_ami(self):
+        raise Exception("Must implement get_ami()")

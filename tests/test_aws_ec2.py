@@ -1,6 +1,7 @@
 import pytest
 
-from stackformation.aws.stacks import (vpc, ec2, iam, user_data, eip, ebs)
+from stackformation.aws.stacks import (vpc, ec2, iam, eip, ebs)
+from stackformation.aws import user_data
 from stackformation import Infra
 from stackformation import utils
 
@@ -47,6 +48,8 @@ def test_ec2_stack(infra):
     ec2_stack.add_security_group(ssh_sg)
 
     ec2_stack.keypair("testkey")
+
+    ec2_stack.set_ami("ami-id")
 
     t = ec2_stack.build_template()
 
