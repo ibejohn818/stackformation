@@ -78,3 +78,8 @@ def test_ec2_stack(infra):
 
     assert env[1][0] == 'ProdTestTestEIPWebEipEIP'
     assert env[1][1] == 'ProdTestTestEIPWebEipAllocationId'
+
+    params = ec2_stack.get_parameters()
+    ec2_stack.before_deploy(prod_infra.context, params)
+
+    assert prod_infra.get_var("WebUserData0") == res['WebUserData'][0]
