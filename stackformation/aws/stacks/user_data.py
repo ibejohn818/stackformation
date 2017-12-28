@@ -1,4 +1,4 @@
-from stackformation import TemplateComponent
+from stackformation.aws.stacks import TemplateComponent
 from stackformation import utils
 
 
@@ -6,7 +6,6 @@ class UserData(TemplateComponent):
 
     def __init__(self, name):
         self.name = name
-
 
     def get_output_vars(self):
         pass
@@ -21,6 +20,7 @@ class CreateCommonDirs(UserData):
         return """
 mkdir -p /opt/stackformation/serf || true
         """
+
 
 class CustomUserData(UserData):
 
@@ -64,6 +64,7 @@ echo {{{{context('{1}')}}}} >  /opt/allocation.eip
             self.eip.output_eip(),
             self.eip.output_allocation_id()
         )
+
 
 class MountEBS(UserData):
 

@@ -1,10 +1,10 @@
-from stackformation import ( BaseStack, SoloStack )
+from stackformation.aws.stacks import (BaseStack, SoloStack)
 import troposphere.cloudwatch as alarm
 from troposphere import (
-        FindInMap, GetAtt, Join,
-        Parameter, Output, Ref,
-        Select, Tags, Template,
-        GetAZs, Export
+    FindInMap, GetAtt, Join,
+    Parameter, Output, Ref,
+    Select, Tags, Template,
+    GetAZs, Export
 )
 
 
@@ -23,19 +23,20 @@ class EC2CpuBaseAlarm(Alarm):
 
     def get_defaults(self):
         return {
-                'threshold': 75,
-                'period': 60,
-                'evaluations': 3,
+            'threshold': 75,
+            'period': 60,
+            'evaluations': 3,
         }
 
     def get_default_attrs(self):
         return {
             'Namespace': 'AWS/EC2',
-            'MetricName':'CPUUtilization',
+            'MetricName': 'CPUUtilization',
             'ComparisonOperator': 'GreaterThanThreshold',
             'TreatMissingData': 'notBreaching',
             'Statistic': 'Average'
         }
+
 
 class EC2HighCpuAlarm(EC2CpuBaseAlarm):
     """EC2 High CPU Alarm
@@ -65,31 +66,33 @@ class EC2HighCpuAlarm(EC2CpuBaseAlarm):
             instance_param = t.parameters[instance_output]
         else:
             instance_param = t.add_parameter(Parameter(
-                                instance_output,
-                                Type='String'
-                                ))
+                instance_output,
+                Type='String'
+            ))
 
-        a = t.add_resource(alarm.Alarm(
-                '{}EC2HighCpuAlarm'.format(self.name),
-                AlarmDescription='Alarm for high CPU (>{})'.format(defaults['threshold']),
-                Period=str(defaults['period']),
-                Threshold=str(defaults['threshold']),
-                EvaluationPeriods=str(defaults['evaluations']),
+        a = t.add_resource(
+            alarm.Alarm(
+                '{}EC2HighCpuAlarm'.format(
+                    self.name),
+                AlarmDescription='Alarm for high CPU (>{})'.format(
+                    defaults['threshold']),
+                Period=str(
+                    defaults['period']),
+                Threshold=str(
+                    defaults['threshold']),
+                EvaluationPeriods=str(
+                    defaults['evaluations']),
                 AlarmActions=topics,
                 InsufficientDataActions=topics,
                 OKActions=topics,
                 Dimensions=[
                     alarm.MetricDimension(
                         Name='InstanceId',
-                        Value=Ref(instance_param)
-                    )
-                ],
-                ))
+                        Value=Ref(instance_param))],
+            ))
 
         for k, v in default_attrs.items():
             setattr(a, k, v)
-
-
 
 
 class EC2InstanceFailAlarm(Alarm):
@@ -101,13 +104,13 @@ class EC2InstanceFailAlarm(Alarm):
         super(EC2InstanceFailAlarm, self).__init__(name)
 
         self.alarm_params = {
-                'threshold': 0,
-                'evaluations': 2,
-                'period': 60
+            'threshold': 0,
+            'evaluations': 2,
+            'period': 60
         }
         self.ec2_stack = ec2_stack
 
-    def _build_alarm(self, template, topics): 
+    def _build_alarm(self, template, topics):
 
         instance_output = self.ec2_stack.output_instance()
 
@@ -115,31 +118,30 @@ class EC2InstanceFailAlarm(Alarm):
             instance_param = template.parameters[instance_output]
         else:
             instance_param = template.add_parameter(Parameter(
-                                instance_output,
-                                Type='String'
-                                ))
-
-        template.add_resource(alarm.Alarm(
-                '{}InstanceFailAlarm'.format(self.ec2_stack.get_stack_name()),
-                AlarmDescription='Alarm for instance failure',
-                Namespace='AWS/EC2',
-                MetricName="StatusCheckFailed_System",
-                Dimensions=[
-                    alarm.MetricDimension(
-                        Name="InstanceId",
-                        Value=Ref(instance_param)
-                    )
-                ],
-                Statistic="Average",
-                Period=str(self.alarm_params['period']),
-                Threshold=str(self.alarm_params['threshold']),
-                EvaluationPeriods=str(self.alarm_params['evaluations']),
-                ComparisonOperator="GreaterThanThreshold",
-                AlarmActions=topics,
-                InsufficientDataActions=topics,
-                OKActions=topics
+                instance_output,
+                Type='String'
             ))
 
+        template.add_resource(alarm.Alarm(
+            '{}InstanceFailAlarm'.format(self.ec2_stack.get_stack_name()),
+            AlarmDescription='Alarm for instance failure',
+            Namespace='AWS/EC2',
+            MetricName="StatusCheckFailed_System",
+            Dimensions=[
+                alarm.MetricDimension(
+                    Name="InstanceId",
+                    Value=Ref(instance_param)
+                )
+            ],
+            Statistic="Average",
+            Period=str(self.alarm_params['period']),
+            Threshold=str(self.alarm_params['threshold']),
+            EvaluationPeriods=str(self.alarm_params['evaluations']),
+            ComparisonOperator="GreaterThanThreshold",
+            AlarmActions=topics,
+            InsufficientDataActions=topics,
+            OKActions=topics
+        ))
 
 
 class AlarmStack(BaseStack, SoloStack):
@@ -160,7 +162,6 @@ class AlarmStack(BaseStack, SoloStack):
         self.topics.append(topic)
         return topic
 
-
     def build_template(self):
 
         t = self._init_template()
@@ -168,10 +169,10 @@ class AlarmStack(BaseStack, SoloStack):
         # topic param/refs
         topics = [
             Ref(t.add_parameter(Parameter(
-                    topic.output_topic(),
-                    Type='String'
-                    ))
-                )
+                topic.output_topic(),
+                Type='String'
+            ))
+            )
             for topic in self.topics
         ]
 
@@ -179,4 +180,3 @@ class AlarmStack(BaseStack, SoloStack):
             a._build_alarm(t, topics)
 
         return t
-

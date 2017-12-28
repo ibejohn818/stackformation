@@ -1,4 +1,4 @@
-from stackformation import ( BaseStack )
+from stackformation.aws.stacks import (BaseStack)
 import troposphere.logs as logs
 from troposphere import (
     FindInMap, GetAtt, Join,
@@ -17,27 +17,26 @@ class LogGroup(object):
 
     def output_log_group(self):
         return "{}{}LogGroup".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                )
+            self.stack.get_stack_name(),
+            self.name
+        )
 
     def build_group(self, t):
 
         group = t.add_resource(logs.LogGroup(
-                    "{}LogGroup".format(self.name)
-                ))
+            "{}LogGroup".format(self.name)
+        ))
 
         t.add_output([
             Output(
                 "{}LogGroup".format(
                     self.name
-                    ),
+                ),
                 Value=Ref(group)
             )
         ])
 
         return group
-
 
 
 class LogStack(BaseStack):
@@ -49,10 +48,9 @@ class LogStack(BaseStack):
         self.stack_name = name
         self.groups = []
 
-
     def add_group(self, group):
         group.stack = self
-        self.groups.append(group);
+        self.groups.append(group)
         return group
 
     def find_group(self, name):
@@ -66,15 +64,14 @@ class LogStack(BaseStack):
         t = self._init_template()
 
         retention = t.add_parameter(Parameter(
-                    "Input{}LogRetentionDays".format(self.stack_name),
-                    Type='String',
-                    Default='7',
-                    Description='{} Log Group Retention Days'.format(self.stack_name)
-                ))
+            "Input{}LogRetentionDays".format(self.stack_name),
+            Type='String',
+            Default='7',
+            Description='{} Log Group Retention Days'.format(self.stack_name)
+        ))
 
         for g in self.groups:
-            g.RetentionInDays=Ref(retention)
+            g.RetentionInDays = Ref(retention)
             g.build_group(t)
 
         return t
-

@@ -1,4 +1,4 @@
-from stackformation import BaseStack, SoloStack
+from stackformation.aws.stacks import BaseStack, SoloStack
 from troposphere import ec2
 from troposphere import (
     FindInMap, GetAtt, Join,
@@ -45,23 +45,28 @@ class SelfReferenceSecurityGroup(SecurityGroup):
 
     def _build_security_group(self, t, vpc):
 
-        sg = t.add_resource(ec2.SecurityGroup(
-            '{}'.format(self.name),
-            GroupDescription="{} Self Reference Security Group".format(self.stack.get_stack_name()),
-            GroupName="{} {}".format(self.stack.get_stack_name(), self.name),
-            VpcId=Ref(vpc),
-            SecurityGroupIngress=[]
-        ))
+        sg = t.add_resource(
+            ec2.SecurityGroup(
+                '{}'.format(
+                    self.name),
+                GroupDescription="{} Self Reference Security Group".format(
+                    self.stack.get_stack_name()),
+                GroupName="{} {}".format(
+                    self.stack.get_stack_name(),
+                    self.name),
+                VpcId=Ref(vpc),
+                SecurityGroupIngress=[]))
 
         t.add_resource(ec2.SecurityGroupIngress(
             '{}Ingress'.format(self.name),
-                    ToPort='-1',
-                    FromPort='-1',
-                    IpProtocol='-1',
-                    SourceSecurityGroupId=Ref(sg),
-                    GroupId=Ref(sg),
+            ToPort='-1',
+            FromPort='-1',
+            IpProtocol='-1',
+            SourceSecurityGroupId=Ref(sg),
+            GroupId=Ref(sg),
         ))
         return sg
+
 
 class SSHSecurityGroup(SecurityGroup):
 
@@ -89,7 +94,7 @@ class SSHSecurityGroup(SecurityGroup):
                 ToPort=self.ssh_port,
                 FromPort=self.ssh_port,
                 IpProtocol='tcp'
-                ))
+            ))
 
         sg = t.add_resource(ec2.SecurityGroup(
             '{}SecurityGroup'.format(self.name),
@@ -97,9 +102,10 @@ class SSHSecurityGroup(SecurityGroup):
             GroupName="{}SecurityGroup".format(self.name),
             VpcId=Ref(vpc),
             SecurityGroupIngress=rules
-            ))
+        ))
 
         return sg
+
 
 class WebSecurityGroup(SecurityGroup):
 
@@ -123,22 +129,22 @@ class WebSecurityGroup(SecurityGroup):
         rules = []
 
         for cidr in self.allowed_cidrs:
-                rules.append(
-                            ec2.SecurityGroupRule(
-                                CidrIp=cidr,
-                                ToPort=self.http_port,
-                                FromPort=self.http_port,
-                                IpProtocol='tcp'
-                            )
-                        )
-                rules.append(
-                            ec2.SecurityGroupRule(
-                                CidrIp=cidr,
-                                ToPort=self.https_port,
-                                FromPort=self.https_port,
-                                IpProtocol='tcp'
-                            )
-                        )
+            rules.append(
+                ec2.SecurityGroupRule(
+                    CidrIp=cidr,
+                    ToPort=self.http_port,
+                    FromPort=self.http_port,
+                    IpProtocol='tcp'
+                )
+            )
+            rules.append(
+                ec2.SecurityGroupRule(
+                    CidrIp=cidr,
+                    ToPort=self.https_port,
+                    FromPort=self.https_port,
+                    IpProtocol='tcp'
+                )
+            )
 
         sg = t.add_resource(ec2.SecurityGroup(
             "{}SecurityGroup".format(self.name),
@@ -146,7 +152,7 @@ class WebSecurityGroup(SecurityGroup):
             GroupDescription="{} Web Security Group".format(self.name),
             VpcId=Ref(vpc),
             SecurityGroupIngress=rules
-            ))
+        ))
 
         return sg
 

@@ -1,4 +1,4 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import BaseStack
 import logging
 from colorama import Fore, Style, Back
 from troposphere import ec2
@@ -56,17 +56,15 @@ class EC2Stack(BaseStack):
 
         n = 4096
 
-        ud_list = [user_data[i:i+n] for i in range(0, len(user_data), n)]
+        ud_list = [user_data[i:i + n] for i in range(0, len(user_data), n)]
 
         for k, v in enumerate(ud_list):
             varname = "{}{}".format(ud_key, k)
             context.add_vars({varname: v})
 
-
     def build_template(self):
 
         t = self._init_template()
-
 
         # tag Name
         tag_name = t.add_parameter(Parameter(
@@ -92,7 +90,7 @@ class EC2Stack(BaseStack):
             Type="String",
             Default="20",
             Description="{} Root Device File Size".format(self.stack_name)
-            ))
+        ))
 
         # root device name
         root_device_name = t.add_parameter(Parameter(
@@ -100,7 +98,7 @@ class EC2Stack(BaseStack):
             Type="String",
             Default="/dev/xvda",
             Description="{} Root Device Name".format(self.stack_name)
-            ))
+        ))
 
         # root device type
         root_device_type = t.add_parameter(Parameter(
@@ -108,8 +106,7 @@ class EC2Stack(BaseStack):
             Type="String",
             Default="gp2",
             Description="{} Root Device Type".format(self.stack_name)
-            ))
-
+        ))
 
         # instance profile
         instance_profile_param = t.add_parameter(Parameter(
@@ -163,20 +160,19 @@ class EC2Stack(BaseStack):
         volumes = []
         for volume in self.volumes:
             device_name = t.add_parameter(Parameter(
-                    'Input{}EBSDeviceName'.format(volume.name),
-                    Type='String'
-                ))
+                'Input{}EBSDeviceName'.format(volume.name),
+                Type='String'
+            ))
 
             volume_id = t.add_parameter(Parameter(
-                    volume.output_volume(),
-                    Type="String"
-                ))
+                volume.output_volume(),
+                Type="String"
+            ))
 
             volumes.append(ec2.MountPoint(
-                    VolumeId=Ref(volume_id),
-                    Device=Ref(device_name)
-                ))
-
+                VolumeId=Ref(volume_id),
+                Device=Ref(device_name)
+            ))
 
         instance = t.add_resource(ec2.Instance(
             '{}EC2Instance'.format(self.stack_name),
@@ -204,11 +200,11 @@ class EC2Stack(BaseStack):
                     "exec > >(tee /var/log/user-data.log|logger ",
                     "-t user-data -s 2>/dev/console) 2>&1\n",
                 ] + user_data
-            ))
+                ))
         ))
 
         if self.use_key:
-            instance.KeyName=self.use_key
+            instance.KeyName = self.use_key
 
         t.add_output([
             Output(
@@ -218,7 +214,6 @@ class EC2Stack(BaseStack):
         ])
 
         return t
-
 
     def output_instance(self):
         return "{}{}EC2Instance".format(

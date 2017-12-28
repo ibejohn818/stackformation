@@ -1,10 +1,10 @@
-from stackformation import (BaseStack, SoloStack)
+from stackformation.aws.stacks import (BaseStack, SoloStack)
 from troposphere import ec2
 from troposphere import (
-        FindInMap, GetAtt, Join,
-        Parameter, Output, Ref,
-        Select, Tags, Template,
-        GetAZs, Export
+    FindInMap, GetAtt, Join,
+    Parameter, Output, Ref,
+    Select, Tags, Template,
+    GetAZs, Export
 )
 
 
@@ -36,11 +36,12 @@ class EIP(object):
 
     def output_eip(self):
         """Return EIP"""
-        return "{}{}EIP".format(self.stack.get_stack_name(),self.name)
+        return "{}{}EIP".format(self.stack.get_stack_name(), self.name)
 
     def output_allocation_id(self):
         """Return EIP Allocation ID"""
-        return "{}{}AllocationId".format(self.stack.get_stack_name(), self.name)
+        return "{}{}AllocationId".format(
+            self.stack.get_stack_name(), self.name)
 
 
 class EIPStack(BaseStack, SoloStack):
@@ -68,7 +69,6 @@ class EIPStack(BaseStack, SoloStack):
 
         return None
 
-
     def build_template(self):
 
         t = self._init_template()
@@ -77,4 +77,3 @@ class EIPStack(BaseStack, SoloStack):
             ip._build_ip(t)
 
         return t
-

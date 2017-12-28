@@ -1,4 +1,4 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import BaseStack
 import inflection
 from troposphere import ec2
 import troposphere.elasticloadbalancing as elb
@@ -34,16 +34,15 @@ class ELBStack(BaseStack):
 
     def add_listener(self, proto, port_in, port_out, **kwargs):
         l = elb.Listener(
-                Protocol=proto,
-                LoadBalancerPort=port_in,
-                InstancePort=port_out
-            )
+            Protocol=proto,
+            LoadBalancerPort=port_in,
+            InstancePort=port_out
+        )
 
         if kwargs.get('ssl_id'):
-            l.SSLCertificateId=kwargs.get('ssl_id')
+            l.SSLCertificateId = kwargs.get('ssl_id')
 
         self.listeners.append(l)
-
 
     def build_template(self):
 
@@ -51,7 +50,6 @@ class ELBStack(BaseStack):
 
         if len(self.listeners) <= 0:
             self.add_listener("HTTP", 80, 80)
-
 
         lb = t.add_resource(elb.LoadBalancer(
             '{}ELB'.format(self.stack_name),
@@ -66,7 +64,6 @@ class ELBStack(BaseStack):
                 Timeout="5",
             )
         ))
-
 
         if not self.public_subnets:
             subs = self.vpc.output_private_subnets()
