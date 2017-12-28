@@ -109,6 +109,9 @@ class Ami(PackerImage):
 
         return amis_query['Images'][0]['ImageId']
 
+    def get_ami(self):
+        return self.get_base_ami()
+
     def build(self):
 
         d = [
