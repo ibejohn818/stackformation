@@ -1,6 +1,6 @@
 import pytest
 
-from stackformation.aws import (vpc)
+from stackformation.aws.stacks import (vpc)
 from stackformation import Infra
 
 

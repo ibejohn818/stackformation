@@ -1,12 +1,13 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import BaseStack
 from troposphere import ec2
 from troposphere import autoscaling
 from troposphere import (
-        FindInMap, GetAtt, Join,
-        Parameter, Output, Ref,
-        Select, Template,
-        GetAZs, Export, Tags
+    FindInMap, GetAtt, Join,
+    Parameter, Output, Ref,
+    Select, Template,
+    GetAZs, Export, Tags
 )
+
 
 class ASGStack(BaseStack):
 
@@ -18,8 +19,6 @@ class ASGStack(BaseStack):
         self.vpc_stack = vpc
         self.elbs = []
         self.private_subnet = False
-
-
 
     def build_template(self):
 
@@ -50,7 +49,6 @@ class ASGStack(BaseStack):
         ))
 
         # launch = t.add_resource(autoscaling.LaunchConfiguration(
-            # '{}LaunchConfig'.format(self.stack_name),
-
+        # '{}LaunchConfig'.format(self.stack_name),
 
         return t

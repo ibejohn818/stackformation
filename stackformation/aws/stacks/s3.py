@@ -1,12 +1,11 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import BaseStack
 from troposphere import (
-        FindInMap, GetAtt, Join,
-        Parameter, Output, Ref,
-        Select, Tags, Template,
-        GetAZs, Export
+    FindInMap, GetAtt, Join,
+    Parameter, Output, Ref,
+    Select, Tags, Template,
+    GetAZs, Export
 )
 import troposphere.s3 as s3
-
 
 
 class BaseS3Bucket(object):
@@ -15,34 +14,32 @@ class BaseS3Bucket(object):
 
         self.name = name
         self.policies = []
-        self.config ={}
+        self.config = {}
         self.versioning = False
         self.public_read = False
         self.stack = None
 
     def output_bucket_name(self):
         return "{}{}BucketName".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                )
-
+            self.stack.get_stack_name(),
+            self.name
+        )
 
     def output_bucket_url(self):
         return "{}{}BucketUrl".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                )
-
+            self.stack.get_stack_name(),
+            self.name
+        )
 
     def _build_template(self, template):
         raise Exception("_build_template must be implemented!")
+
 
 class S3Bucket(BaseS3Bucket):
 
     def __init__(self, name):
 
         super(S3Bucket, self).__init__(name)
-
 
     def _build_template(self, template):
 
@@ -52,7 +49,7 @@ class S3Bucket(BaseS3Bucket):
         ))
 
         if self.public_read:
-            s3b.AccessControl=s3.PublicRead
+            s3b.AccessControl = s3.PublicRead
 
         t.add_output([
             Output(
@@ -87,7 +84,6 @@ class S3Stack(BaseStack):
     def find_bucket(self, clazz, name=None):
 
         return self.find_class_in_list(self.buckets, clazz, name)
-
 
     def build_template(self):
 

@@ -1,4 +1,4 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import BaseStack
 from awacs import aws
 import awacs.sts
 import awacs.s3
@@ -198,6 +198,7 @@ class EC2AdminProfile(EC2Profile):
         # self.principals = ["*"]
         self.add_managed_policy("AdministratorAccess")
 
+
 class EC2FullAccess(IAMPolicy):
 
     def _bind_role(self, template, role):
@@ -208,13 +209,14 @@ class EC2FullAccess(IAMPolicy):
             PolicyDocument=aws.Policy(
                 Statement=[
                     aws.Statement(
-                        Action=[awacs.aws.Action("ec2","*")],
+                        Action=[awacs.aws.Action("ec2", "*")],
                         Effect=aws.Allow,
                         Resource=["*"]
                     )
                 ]
             )
         ))
+
 
 class ELBFullAccess(IAMPolicy):
 
@@ -226,7 +228,7 @@ class ELBFullAccess(IAMPolicy):
             PolicyDocument=aws.Policy(
                 Statement=[
                     aws.Statement(
-                        Action=[awacs.aws.Action("elasticloadbalancing","*")],
+                        Action=[awacs.aws.Action("elasticloadbalancing", "*")],
                         Effect=aws.Allow,
                         Resource=["*"]
                     )
@@ -323,7 +325,7 @@ class S3ReadBucketAccess(IAMPolicy):
                             awacs.s3.GetObject,
                             awacs.s3.ListBucket,
                             awacs.s3.ListBucketVersions,
-                            awacs.aws.Action('s3','GetObject*'),
+                            awacs.aws.Action('s3', 'GetObject*'),
                             awacs.aws.Action('s3', 'ListAllMyBuckets')
                         ],
                         Resource=[
@@ -337,7 +339,7 @@ class S3ReadBucketAccess(IAMPolicy):
                             awacs.s3.GetObject,
                             awacs.s3.ListBucket,
                             awacs.s3.ListBucketVersions,
-                            awacs.aws.Action('s3','GetObject*'),
+                            awacs.aws.Action('s3', 'GetObject*'),
                             awacs.aws.Action('s3', 'ListAllMyBuckets')
                         ],
                         Resource=[
