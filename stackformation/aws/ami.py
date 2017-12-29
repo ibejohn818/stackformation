@@ -19,7 +19,7 @@ AMI_INFO={
             },
         ]
     },
-    'aws': {
+    'awslinux': {
         'username': 'ec2-user',
         'ami_filters': [
             {
@@ -48,11 +48,11 @@ class BaseAmi(StackComponent):
 
 class Ami(PackerImage):
 
-    def __init__(self, name, os_type='aws'):
+    def __init__(self, name, os_type='awslinux'):
 
         super(Ami, self).__init__(name)
         self.os_type = os_type
-
+        self.base_ami_info = None
 
 
     def get_base_ami(self):
@@ -107,7 +107,11 @@ class Ami(PackerImage):
             key=lambda item: item['CreationDate'],
             reverse=True)
 
-        return amis_query['Images'][0]['ImageId']
+        ami = amis_query['Images'][0]
+
+        self.base_ami_info = ami
+
+        return ami['ImageId']
 
     def get_ami(self):
         return self.get_base_ami()

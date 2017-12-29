@@ -18,13 +18,7 @@ StackFormation
      :alt: Updates
 
 
-Stackfromation is an AWS CloudFormation framework that allows you to enforce "Infrastructure-as-code".
-It uses a convention to allow you to manage your stack-resources as python objects.
-It does not bind stacks together using Import and allows for more predictable updates to existing stacks
-and quick prototyping of your infrastructure to different stages IE: DEV, STAGING & PRODUCTION.
-
-Optionally, it also enforces an AMI workflow that separates the construction and updating of your AMI's
-using ansible and packer.
+Cloudformation framework to enforce infrastructure-as-code paradigm
 
 
 Installation
