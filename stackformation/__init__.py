@@ -198,7 +198,7 @@ class Infra(object):
 
         env = utils.jinja_env({}, True)
 
-        stack.parse_template_components(env[0], Context())
+        stack.render_template_components(env[0], Context())
 
 
         params += env[1]

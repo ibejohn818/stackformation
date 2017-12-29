@@ -16,7 +16,7 @@ class CreateCommonDirs(UserData):
     def __init__(self, name):
         super(CreateCommonDirs, self).__init__(name)
 
-    def text(self):
+    def render(self):
         return """
 mkdir -p /opt/stackformation/serf || true
         """
@@ -30,7 +30,7 @@ class CustomUserData(UserData):
 
         self.text = text
 
-    def text(self):
+    def render(self):
         return text
 
 
@@ -42,7 +42,7 @@ class WriteEIP(UserData):
 
         self.eip = eip
 
-    def text(self):
+    def render(self):
 
         return """
 echo {{context('%s')}} >> /tmp/testip
@@ -56,7 +56,7 @@ class EIPInfo(UserData):
 
         self.eip = eip
 
-    def text(self):
+    def render(self):
         return """
 echo {{{{context('{0}')}}}} >  /opt/ip.eip
 echo {{{{context('{1}')}}}} >  /opt/allocation.eip
@@ -72,7 +72,7 @@ class MountEBS(UserData):
         self.ebs_volume = ebs_volume
         self.path = path
 
-    def text(self):
+    def render(self):
 
         return """
 if file -sL {{{{context('Input{0}EBSDeviceName')}}}} | grep -vq ext4; then

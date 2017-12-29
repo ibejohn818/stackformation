@@ -103,7 +103,7 @@ class BaseStack(StackComponent):
 
         self.template_components[var].append(component)
 
-    def parse_template_components(self, env, context):
+    def render_template_components(self, env, context):
 
         results = {}
 
@@ -112,7 +112,7 @@ class BaseStack(StackComponent):
 
         for k, v in self.template_components.items():
             for c in v:
-                text = c.text()
+                text = c.render()
                 t = env.from_string(text)
                 if not results.get(k):
                     results[k] = []
@@ -239,12 +239,12 @@ class BaseStack(StackComponent):
 
         template = self.build_template()
         parameters = self.get_parameters()
-        template_vars = self.parse_template_components(env[0], context)
+        template_vars = self.render_template_components(env[0], context)
 
         self.before_deploy(context, parameters)
 
         parameters = self.fill_params(parameters, context)
-        print(parameters)
+
         dep_kw = {
             'StackName': self.get_remote_stack_name(),
             'TemplateBody': template.to_json(),
@@ -432,5 +432,5 @@ class BaseStack(StackComponent):
 
 class TemplateComponent(object):
 
-    def text(self, infra, context):
+    def render(self, infra, context):
         raise Exception("Must implement get_template method")
