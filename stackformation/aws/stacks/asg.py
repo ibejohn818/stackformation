@@ -1,5 +1,5 @@
 from stackformation.aws.stacks import BaseStack
-from stackformation.aws import PackerImage
+from stackformation.aws import Ami
 from troposphere import ec2
 from troposphere import autoscaling
 from troposphere.policies import UpdatePolicy, AutoScalingRollingUpdate
@@ -29,7 +29,7 @@ class ASGStack(BaseStack):
         self.keyname = None
 
     def set_ami(self, ami):
-        if isinstance(ami, (PackerImage)):
+        if isinstance(ami, (Ami)):
             self.ami = ami.get_ami()
         else:
             self.ami = ami

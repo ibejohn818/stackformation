@@ -10,8 +10,23 @@ import os
 from stackformation.utils import (match_stack)
 import jinja2
 from colorama import Fore, Style, Back
+import re
+from pprint import pprint
 
 INFRA_FILE = "infra.py"
+
+HELP = {
+
+    'images_build':"""
+Select the image to build from your configured images in your {0} file.
+If this is the first image being built it will automatically be made active.
+If there are more than one builds present, make sure to mark the image --active/-a
+if you wish for this to be the current build in-scope
+""".format(INFRA_FILE)
+
+
+
+}
 
 
 @click.group()
@@ -20,7 +35,7 @@ def main(infrafile=None):
 
     if infrafile is not None:
         global INFRA_FILE
-        INFRA_FILE=infrafile
+        INFRA_FILE = infrafile
 
     configure_logging()
     load_configuration()
@@ -30,15 +45,110 @@ def main(infrafile=None):
 def stacks():
     pass
 
+
 @main.group()
-def image():
+def images():
     pass
 
-@image.command(help="Build AMI's")
-def build():
+
+@images.command(help="", name='list')
+def list_images():
 
     infra = load_infra_file()
 
+    images = infra.list_images()
+
+    for image in images:
+
+        click.echo('----------------')
+
+        amis = image.query_amis()
+        click.echo(
+            "Name: {}{} ({}){}".format(
+                Style.BRIGHT,
+                image.name,
+                len(amis),
+                Style.RESET_ALL))
+        if len(amis) <= 0:
+            click.echo(
+                "   {}No AMI's have been built{}".format(
+                    Fore.RED, Style.RESET_ALL))
+        else:
+            for ami in amis:
+
+                flag = ""
+                flag_style = Fore.CYAN
+
+                for t in ami['Tags']:
+                    if t['Key'] == 'ACTIVE':
+                        flag = "(ACTIVE)"
+                        flag_style = Fore.GREEN
+
+                click.echo(
+                    "  Date: {} {}AMI: {}{}{}".format(
+                        ami['CreationDate'],
+                        flag_style,
+                        ami['ImageId'],
+                        flag,
+                        Style.RESET_ALL))
+        click.echo('----------------')
+
+@images.command(help="", name='generate')
+@click.argument("name", required=True)
+def generate_image(name):
+
+    infra = load_infra_file()
+
+    images = infra.list_images()
+
+    # for image in images:
+    # if image.name.startswith(name):
+
+
+@images.command(help=HELP['images_build'], name='build')
+@click.argument("name", required=True)
+@click.option('--active','-a', is_flag=True, default=False, help='Make image active')
+def build_image(name, active):
+
+    infra = load_infra_file()
+
+    images = infra.list_images()
+
+    results = []
+
+    for image in images:
+        if image.name.startswith(name):
+            click.echo("Matched: {}".format(image.name))
+            results.append(image)
+    if active:
+        click.echo("Images will be made active")
+
+    click.confirm("Do you wish to build the matched images?", abort=True)
+
+    for image in results:
+        image.build(active)
+
+@images.command(help="", name='activate')
+@click.argument("name", required=True)
+@click.option('--id', required=True)
+def images_activate(name, id):
+
+
+    infra = load_infra_file()
+
+    images = infra.list_images()
+
+    results = []
+
+    for image in images:
+        if name == image.name:
+            result = image
+
+    click.confirm("Make {} the active AMI for {}".format(id, result.name), abort=True)
+
+    result.promote_ami(id)
+
+    click.echo("{} Now active".format(id))
 
 
 @stacks.command(name='list')
@@ -62,19 +172,20 @@ def list_stack(selector=None):
 
     for stack in stacks:
         click.echo("{}Stack:{} {} {}[{}]{}".format(
-                    Style.BRIGHT,
-                    Style.RESET_ALL+Fore.GREEN,
-                    stack.get_stack_name(),
-                    Fore.YELLOW,
-                    stack.get_remote_stack_name(),
-                    Style.RESET_ALL
-                    ))
+            Style.BRIGHT,
+            Style.RESET_ALL + Fore.GREEN,
+            stack.get_stack_name(),
+            Fore.YELLOW,
+            stack.get_remote_stack_name(),
+            Style.RESET_ALL
+        ))
         click.echo("{}Type: {}{}{}".format(
-                    Style.BRIGHT,
-                    Style.RESET_ALL+Fore.CYAN,
-                    stack.__class__,
-                    Style.RESET_ALL
-                    ))
+            Style.BRIGHT,
+            Style.RESET_ALL + Fore.CYAN,
+            stack.__class__,
+            Style.RESET_ALL
+        ))
+
 
 @stacks.command(help='Deploy stacks')
 @click.argument('selector', nargs=-1)
@@ -112,6 +223,7 @@ def deploy(selector):
 
     deploy.deploy(infra, selector)
 
+
 @stacks.command(help='Destroy stacks')
 @click.argument('selector', nargs=-1)
 def destroy(selector):
@@ -126,7 +238,6 @@ def destroy(selector):
         exit(0)
 
     deploy.destroy(infra, selector, reverse=True)
-
 
 
 @stacks.command(help='Dump Cloudformation template')
@@ -190,8 +301,8 @@ def load_configuration():
     HOME = os.environ['HOME']
 
     if HOME is None:
-        raise Exception("$HOME environment variable needs to be set to save configuration")
-
+        raise Exception(
+            "$HOME environment variable needs to be set to save configuration")
 
 
 def jinja_env():
