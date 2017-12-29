@@ -24,8 +24,9 @@ class ASGStack(BaseStack):
         self.private_subnet = False
         self.security_groups = []
         self.pause_time = 'PT5M'
-        self.update_policy_instance_count = 0
-        self.ami = None
+        self.update_policy_instance_count = 2
+        self.ami = None,
+        self.keyname = None
 
     def set_ami(self, ami):
         if isinstance(ami, (PackerImage)):
@@ -113,6 +114,8 @@ class ASGStack(BaseStack):
             Description="{} Root Device Type".format(self.stack_name)
         ))
 
+
+
         # instance profile
         instance_profile_param = t.add_parameter(Parameter(
             self.iam_profile.output_instance_profile(),
@@ -157,6 +160,7 @@ class ASGStack(BaseStack):
 
         lconfig = t.add_resource(autoscaling.LaunchConfiguration(
             '{}LaunchConfiguration'.format(self.name),
+            AssociatePublicIpAddress=True,
             IamInstanceProfile=Ref(instance_profile_param),
             BlockDeviceMappings=[
                 ec2.BlockDeviceMapping(
@@ -176,18 +180,30 @@ class ASGStack(BaseStack):
                 "exec > >(tee /var/log/user-data.log|logger ",
                 "-t user-data -s 2>/dev/console) 2>&1\n",
                 ] + user_data_refs + [
-                "\n", "yum update -y aws-cfn-bootstrap", "\n",
+                "\n", 
+                "#yum update -y aws-cfn-bootstrap",
+                "\n",
+                "curl -L https://gist.github.com/ibejohn818",
+                "/aa2bcd6743a59f62e1baa098d6365a61/raw/",
+                "/ubuntu-init.sh",
+                " -o /tmp/ubuntu-init.sh && chmod +x /tmp/ubuntu-init.sh",
+                "\n",
+                "/tmp/ubuntu-init.sh",
+                "\n",
                 #] + wait_cmd + [
-                "/opt/aws/bin/cfn-signal -e 0",
-                "    --resource AutoscalingGroup",
+                "cfn-signal -e 0",
+                "    --resource {}AutoScalingGroup".format(self.stack_name),
                 "    --stack ", Ref("AWS::StackName"),
                 "    --region ", Ref("AWS::Region"), "\n",
                 ]
             ))
             ))
 
+        if self.keyname:
+            lconfig.KeyName = self.keyname
+
         asg = t.add_resource(autoscaling.AutoScalingGroup(
-            '{}AutoScalingGroup'.format(self.name),
+            '{}AutoScalingGroup'.format(self.stack_name),
             LaunchConfigurationName=Ref(lconfig),
             MinSize=Ref(min_inst),
             MaxSize=Ref(max_inst),
