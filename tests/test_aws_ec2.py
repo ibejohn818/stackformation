@@ -77,7 +77,7 @@ def test_ec2_stack(infra):
 
     env = utils.jinja_env(prod_infra.context, True)
 
-    res = ec2_stack.parse_template_components(env[0], prod_infra.context)
+    res = ec2_stack.render_template_components(env[0], prod_infra.context)
 
     assert env[1][0] == 'ProdTestTestEIPWebEipEIP'
     assert env[1][1] == 'ProdTestTestEIPWebEipAllocationId'
