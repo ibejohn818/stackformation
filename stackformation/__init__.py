@@ -115,7 +115,7 @@ class Infra(object):
         self.input_vars = {}
         self.output_vars = {}
         self.context = Context()
-        self.amis = []
+        self.images = []
 
     def add_var(self, name, value):
         return self.context.update({name: value})
@@ -129,10 +129,24 @@ class Infra(object):
     def get_var(self, name):
         return self.context.get_var(name)
 
-    def find_input_name(self, name):
-        if not self.context.get_var(name):
-            raise Exception("ERROR: {} Input Not Set!".format(name))
-        return name
+    def add_image(self, image):
+
+        image.prefix = self.prefix
+        image.boto_session = self.boto_session
+        self.images.append(image)
+        return image
+
+    def list_images(self):
+
+        images = []
+
+        for image in self.images:
+            images.append(image)
+
+        for infra in self.sub_infras:
+            images.extend(infra.list_images())
+
+        return images
 
     def create_sub_infra(self, prefix):
         """
@@ -237,24 +251,5 @@ class Infra(object):
 
         return None
 
-    def add_ami(self, ami):
-
-        ami.prefix = self.prefix
-        ami.boto_session = self.boto_session
-        self.amis.append(ami)
-        return ami
-
-
-    def list_amis(self):
-
-        amis = []
-
-        for ami in self.amis:
-            amis.append(ami)
-
-        for infra in self.sub_infras:
-            amis.extend(infra.list_amis())
-
-        return amis
 
 

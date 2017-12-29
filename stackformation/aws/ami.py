@@ -1,11 +1,10 @@
 from stackformation.aws.stacks import (StackComponent)
-from stackformation.aws import (PackerImage)
 import stackformation
 import json
 import os
 import subprocess
 import yaml
-
+from stackformation.aws import PackerImage
 
 CWD = os.path.realpath(os.path.dirname(stackformation.__file__)).strip('/')
 
@@ -53,7 +52,6 @@ class Ami(PackerImage):
         super(Ami, self).__init__(name)
         self.os_type = os_type
         self.base_ami_info = None
-
 
     def get_base_ami(self):
         """
@@ -116,24 +114,45 @@ class Ami(PackerImage):
     def get_ami(self):
         return self.get_base_ami()
 
-    def build(self):
 
-        d = [
-            {
-                'roles':[
-                    json.dumps({'Role': 'php-56', 'var':'var', 'var1':'var1'}),
-                    json.dumps({'Role': 'php-56', 'var':'var', 'var1':'var1'})
-                ]
-            }
-        ]
-        print(d)
+    def get_vpc_id(self):
 
+        ec2 = self.boto_session.client('ec2')
 
-        with open("test.yaml", "w") as yml:
-            yaml.dump(d, yml, default_flow_style=False)
+        f = [
+                {'Name': 'is-default', 'Values': ['true']}
+            ]
 
+        vpc = ec2.describe_vpcs(Filters=f)
 
+        return vpc['Vpcs'][0]['VpcId']
 
+    def generate(self):
+
+        self.region = self.boto_session.get_conf('region_name')
+
+        aws_builder = {
+                'type':'amazon-ebs',
+                'source_ami': self.get_base_ami(),
+                'instance_type':'t2.medium',
+                'communicator': 'ssh',
+                'ssh_pty': 'true',
+                'ssh_username': self.get_ssh_user(),
+                'ami_name':"AMI {}".format(self.name),
+                'region':self.region,
+                'vpc_id': self.get_vpc_id()
+
+        }
+
+        shell = {
+                'type': 'shell',
+                'inline': ['echo "HELLLP"']
+                }
+
+        self.add_builder(aws_builder)
+        self.add_provisioner(shell)
+        self.save_packer_file()
+        return super(Ami, self).generate()
 
 
 
