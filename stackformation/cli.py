@@ -10,6 +10,8 @@ import os
 from stackformation.utils import (match_stack)
 import jinja2
 from colorama import Fore, Style, Back
+import re
+from pprint import pprint
 
 INFRA_FILE = "infra.py"
 
@@ -31,15 +33,49 @@ def stacks():
     pass
 
 @main.group()
-def image():
+def images():
     pass
 
-@image.command(help="Build AMI's")
+@images.command(help="Build AMI's")
 def build():
 
     infra = load_infra_file()
 
 
+@images.command(help="", name='list')
+def list_images():
+
+    infra = load_infra_file()
+
+    images = infra.list_images()
+
+    for image in images:
+        click.echo(image.name)
+
+
+@images.command(help="", name='generate')
+@click.argument("name")
+def generate_image(name):
+
+    infra = load_infra_file()
+
+    images = infra.list_images()
+
+    for image in images:
+        if image.name.startswith(name):
+            pprint(image.generate())
+
+@images.command(help="", name='build')
+@click.argument("name")
+def build_image(name):
+
+    infra = load_infra_file()
+
+    images = infra.list_images()
+
+    for image in images:
+        if image.name.startswith(name):
+            image.build()
 
 @stacks.command(name='list')
 @click.argument('selector', nargs=-1)
