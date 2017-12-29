@@ -48,7 +48,7 @@ setup(
     zip_safe=False,
     keywords='stackformation',
     classifiers=[
-        'Development Status :: Beta',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
