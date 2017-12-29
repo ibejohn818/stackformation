@@ -1,5 +1,5 @@
 from stackformation.aws.stacks import BaseStack
-from stackformation.aws import PackerImage
+from stackformation.aws import Ami
 import logging
 from colorama import Fore, Style, Back
 from troposphere import ec2
@@ -62,7 +62,7 @@ class EC2Stack(BaseStack):
                 context.add_vars({varname: v})
 
     def set_ami(self, ami):
-        if isinstance(ami, (PackerImage)):
+        if isinstance(ami, (Ami)):
             self.ami = ami.get_ami()
         else:
             self.ami = ami
