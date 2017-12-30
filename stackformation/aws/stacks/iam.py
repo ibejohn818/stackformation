@@ -23,11 +23,11 @@ class IAMBase(object):
 
 class IAMRole(IAMBase):
 
-    def __init__(self, name):
+    def __init__(self, name, principals="*"):
 
         super(IAMRole, self).__init__(name)
 
-        self.principals = ["*"]
+        self.principals = principals
         self.managed_policies = []
         self.policies = []
 
@@ -55,6 +55,11 @@ class IAMRole(IAMBase):
 
         t = template
 
+        if self.principals == "*":
+            principal_title = "*"
+        else:
+            principal_title = "Service"
+
         role = t.add_resource(iam.Role(
             self.name,
             AssumeRolePolicyDocument=aws.Policy(
@@ -62,7 +67,7 @@ class IAMRole(IAMBase):
                     aws.Statement(
                         Action=[awacs.sts.AssumeRole],
                         Effect=aws.Allow,
-                        Principal=aws.Principal("Service", self.principals)
+                        Principal=aws.Principal(principal_title, self.principals)
                     )
                 ]
             ),
@@ -350,6 +355,81 @@ class S3ReadBucketAccess(IAMPolicy):
                 ]
             )
         ))
+
+
+class CloudWatchLogs(IAMPolicy):
+
+    def _bind_role(self, t, r):
+
+        r.Policies.append(iam.Policy(
+            'cloudwatch',
+            PolicyName='cloudwatch',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Effect=aws.Allow,
+                        Resource=['*'],
+                        Action=[
+                            awacs.logs.PutLogEvents,
+                            awacs.logs.PutMetricFilter,
+                            awacs.logs.CreateLogGroup,
+                            awacs.logs.CreateLogStream,
+                            awacs.logs.DescribeLogStreams,
+                        ]
+                    )
+                ]
+            )
+        ))
+
+class CodeDeployRole(IAMRole):
+
+    def __init__(self, name):
+        super(CodeDeployRole, self).__init__(
+        "{}CodeDeploy".format(name),
+        [
+            'codedeploy.us-west-1.amazonaws.com',
+            'codedeploy.us-west-2.amazonaws.com',
+            'codedeploy.us-east-1.amazonaws.com',
+            'codedeploy.us-east-2.amazonaws.com',
+            'codedeploy.eu-west-1.amazonaws.com',
+            'codedeploy.ap-southeast-2.amazonaws.com'
+        ])
+
+class CodeDeployPolicy(IAMPolicy):
+
+    def __init__(self):
+        super(CodeDeployPolicy, self).__init__('CodeDeployPolicy')
+
+    def _bind_role(self, t, r):
+
+        r.Policies.append(iam.Policy(
+            'codedeploy',
+            PolicyName='codedeploy',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Effect=aws.Allow,
+                        Resource=['*'],
+                        Action=[
+                            aws.Action('autoscaling', '*'),
+                            aws.Action('elasticloadbalancing', 'DescribeLoadBalancers'),
+                            aws.Action('elasticloadbalancing', 'DescribeInstanceHealth'),
+                            aws.Action('elasticloadbalancing',
+                                    'RegisterInstancesWithLoadBalancer'),
+                            aws.Action('elasticloadbalancing',
+                                    'DeregisterInstancesFromLoadBalancer'),
+                            aws.Action('ec2', 'Describe*'),
+                            aws.Action('ec2', 'TerminateInstances'),
+                            aws.Action('tag', 'GetTags'),
+                            aws.Action('tag', 'GetResources'),
+                            aws.Action('tag', 'GetTagsForResource'),
+                            aws.Action('tag', 'GetTagsForResourceList')
+                        ]
+                    ),
+                ]
+            )
+        ))
+
 
 class IAMUser(IAMBase):
 

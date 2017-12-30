@@ -251,5 +251,9 @@ class Infra(object):
 
         return None
 
-
+    def get_prefix(self):
+        return ''.join([
+                        utils.ucfirst(i)
+                        for i in self.prefix
+                        ])
 

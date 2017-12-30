@@ -29,10 +29,12 @@ class ASGStack(BaseStack):
         self.keyname = None
 
     def set_ami(self, ami):
-        if isinstance(ami, (Ami)):
-            self.ami = ami.get_ami()
-        else:
-            self.ami = ami
+        self.ami = ami
+
+    def get_ami(self):
+        if isinstance(self.ami, (Ami)):
+            return self.ami.get_ami()
+        return self.ami
 
     def add_elb(self, elb_stack):
         self.elb_stacks.append(elb_stack)
@@ -42,6 +44,12 @@ class ASGStack(BaseStack):
 
     def add_user_data(self, ud):
         self.add_template_component(ud)
+
+    def output_asg(self):
+        return "{}{}ASG".format(
+                self.get_stack_name(),
+                self.stack_name
+            )
 
     def build_template(self):
 
@@ -158,6 +166,15 @@ class ASGStack(BaseStack):
                     for i  in sn_list
                 ]
 
+        elb_list = [
+            Ref(t.add_parameter(Parameter(
+                elb.output_elb(),
+                Type='String'
+            )))
+            for elb in self.elb_stacks
+        ]
+
+
         lconfig = t.add_resource(autoscaling.LaunchConfiguration(
             '{}LaunchConfiguration'.format(self.name),
             AssociatePublicIpAddress=True,
@@ -174,7 +191,7 @@ class ASGStack(BaseStack):
             ],
             InstanceType=Ref(inst_type),
             SecurityGroups=sec_groups,
-            ImageId=self.ami,
+            ImageId=self.get_ami(),
             UserData=Base64(Join('', [
                 "#!/bin/bash\n",
                 "exec > >(tee /var/log/user-data.log|logger ",
@@ -207,6 +224,7 @@ class ASGStack(BaseStack):
             VPCZoneIdentifier=sn_list,
             HealthCheckType='EC2',
             TerminationPolicies=[Ref(term_policies)],
+            LoadBalancerNames=elb_list,
             UpdatePolicy=UpdatePolicy(
                 AutoScalingRollingUpdate=AutoScalingRollingUpdate(
                     PauseTime=self.pause_time,
@@ -216,6 +234,13 @@ class ASGStack(BaseStack):
                 )
             )
            ))
+
+        t.add_output([
+            Output(
+                '{}ASG'.format(self.stack_name),
+                Value=Ref(asg)
+            )
+        ])
 
 
         return t
