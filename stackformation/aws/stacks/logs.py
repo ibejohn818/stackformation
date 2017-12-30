@@ -55,7 +55,7 @@ class LogStack(BaseStack):
 
     def find_group(self, name):
         for g in self.groups:
-            if g == name:
+            if g.name == name:
                 return g
         return None
 

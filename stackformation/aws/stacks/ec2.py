@@ -62,10 +62,12 @@ class EC2Stack(BaseStack):
                 context.add_vars({varname: v})
 
     def set_ami(self, ami):
-        if isinstance(ami, (Ami)):
-            self.ami = ami.get_ami()
-        else:
-            self.ami = ami
+        self.ami = ami
+
+    def get_ami(self):
+        if isinstance(self.ami, (Ami)):
+            return self.ami.get_ami()
+        return self.ami
 
     def build_template(self):
 
@@ -75,7 +77,7 @@ class EC2Stack(BaseStack):
         tag_name = t.add_parameter(Parameter(
             "Input{}EC2TagName".format(self.stack_name),
             Type="String",
-            Default='{} EC2'.format(self.stack_name),
+            Default='{}EC2'.format(self.stack_name),
             Description="Tag name for {} EC2 Stack".format(self.stack_name)
         ))
 
@@ -184,7 +186,7 @@ class EC2Stack(BaseStack):
             Tags=Tags(
                 Name=Ref(tag_name)
             ),
-            ImageId=self.ami,
+            ImageId=self.get_ami(),
             Volumes=volumes,
             InstanceType=Ref(instance_type),
             IamInstanceProfile=Ref(instance_profile_param),
@@ -215,11 +217,21 @@ class EC2Stack(BaseStack):
             Output(
                 '{}EC2Instance'.format(self.stack_name),
                 Value=Ref(instance)
+            ),
+            Output(
+                "{}TagName".format(self.stack_name),
+                Value=Ref(tag_name)
             )
         ])
+
 
         return t
 
     def output_instance(self):
         return "{}{}EC2Instance".format(
             self.get_stack_name(), self.stack_name)
+
+    def output_tag_name(self):
+        return "{}{}TagName".format(
+                self.get_stack_name(),
+                self.stack_name)
