@@ -62,10 +62,12 @@ class EC2Stack(BaseStack):
                 context.add_vars({varname: v})
 
     def set_ami(self, ami):
-        if isinstance(ami, (Ami)):
-            self.ami = ami.get_ami()
-        else:
-            self.ami = ami
+        self.ami = ami
+
+    def get_ami(self):
+        if isinstance(self.ami, (Ami)):
+            return self.ami.get_ami()
+        return self.ami
 
     def build_template(self):
 
