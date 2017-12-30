@@ -23,11 +23,11 @@ class IAMBase(object):
 
 class IAMRole(IAMBase):
 
-    def __init__(self, name):
+    def __init__(self, name, principals="*"):
 
         super(IAMRole, self).__init__(name)
 
-        self.principals = ["*"]
+        self.principals = principals
         self.managed_policies = []
         self.policies = []
 
@@ -55,6 +55,11 @@ class IAMRole(IAMBase):
 
         t = template
 
+        if self.principals == "*":
+            principal_title = "*"
+        else:
+            principal_title = "Service"
+
         role = t.add_resource(iam.Role(
             self.name,
             AssumeRolePolicyDocument=aws.Policy(
@@ -62,7 +67,7 @@ class IAMRole(IAMBase):
                     aws.Statement(
                         Action=[awacs.sts.AssumeRole],
                         Effect=aws.Allow,
-                        Principal=aws.Principal("Service", self.principals)
+                        Principal=aws.Principal(principal_title, self.principals)
                     )
                 ]
             ),
