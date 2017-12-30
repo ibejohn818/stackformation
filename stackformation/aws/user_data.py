@@ -1,5 +1,4 @@
 from stackformation.aws.stacks import TemplateComponent
-from stackformation import utils
 
 
 class UserData(TemplateComponent):
@@ -31,7 +30,7 @@ class CustomUserData(UserData):
         self.text = text
 
     def render(self):
-        return text
+        return self.text
 
 
 class WriteEIP(UserData):
@@ -81,4 +80,4 @@ fi
 mkdir -p {1}
 echo '{{{{context('Input{0}EBSDeviceName')}}}} {1} ext4 defaults,nofail 0 2' >> /etc/fstab
 mount -a
-        """.format(self.ebs_volume.name, self.path)
+        """.format(self.ebs_volume.name, self.path) # noqa

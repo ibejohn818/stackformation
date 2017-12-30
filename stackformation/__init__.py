@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 import boto3
-import troposphere
-import inflection
 import logging
-import botocore
-import sys
-from colorama import Fore, Style, Back
 from stackformation.aws.stacks import (BaseStack, SoloStack)
 import stackformation.utils as utils
 
@@ -100,8 +95,6 @@ class Context(object):
         return self.vars.get(name)
 
 
-
-
 class Infra(object):
 
     def __init__(self, name, boto_session=None):
@@ -185,8 +178,8 @@ class Infra(object):
     def list_stacks(self, **kwargs):
 
         defaults = {
-                'reverse': False
-                }
+            'reverse': False
+        }
 
         defaults.update(kwargs)
 
@@ -213,7 +206,6 @@ class Infra(object):
         env = utils.jinja_env({}, True)
 
         stack.render_template_components(env[0], Context())
-
 
         params += env[1]
 
@@ -253,7 +245,6 @@ class Infra(object):
 
     def get_prefix(self):
         return ''.join([
-                        utils.ucfirst(i)
-                        for i in self.prefix
-                        ])
-
+            utils.ucfirst(i)
+            for i in self.prefix
+        ])

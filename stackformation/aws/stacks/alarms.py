@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import (BaseStack, SoloStack)
 import troposphere.cloudwatch as alarm
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -47,7 +47,7 @@ class EC2HighCpuAlarm(EC2CpuBaseAlarm):
     Returns:
         void
 
-    """
+    """ # noqa
 
     def __init__(self, ec2_stack):
         name = '{}HighCpuAlarm'.format(ec2_stack.get_stack_name())

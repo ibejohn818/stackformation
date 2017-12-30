@@ -3,7 +3,7 @@ from stackformation.aws import Ami
 from troposphere import ec2
 from troposphere import autoscaling
 from troposphere.policies import UpdatePolicy, AutoScalingRollingUpdate
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Template, Base64,
@@ -47,9 +47,9 @@ class ASGStack(BaseStack):
 
     def output_asg(self):
         return "{}{}ASG".format(
-                self.get_stack_name(),
-                self.stack_name
-            )
+            self.get_stack_name(),
+            self.stack_name
+        )
 
     def build_template(self):
 
@@ -83,14 +83,14 @@ class ASGStack(BaseStack):
             Description='{} Instance Type'.format(self.stack_name)
         ))
 
-        inst_tag_name = t.add_parameter(Parameter(
-            'Input{}ASGTagName'.format(self.stack_name),
-            Type='String',
-            Default='{} ASG'.format(self.name),
-            Description='{} Instance Type'.format(self.stack_name)
-        ))
+        # inst_tag_name = t.add_parameter(Parameter(
+        # 'Input{}ASGTagName'.format(self.stack_name),
+        # Type='String',
+        # Default='{}ASG'.format(self.name),
+        # Description='{} Instance Type'.format(self.stack_name)
+        # ))
 
-        #termination policies
+        # termination policies
         term_policies = t.add_parameter(Parameter(
             'Input{}ASGTerminationPolicies'.format(self.stack_name),
             Type='String',
@@ -122,8 +122,6 @@ class ASGStack(BaseStack):
             Description="{} Root Device Type".format(self.stack_name)
         ))
 
-
-
         # instance profile
         instance_profile_param = t.add_parameter(Parameter(
             self.iam_profile.output_instance_profile(),
@@ -134,23 +132,22 @@ class ASGStack(BaseStack):
 
         # sec groups
         sec_groups = [
-                Ref(t.add_parameter(Parameter(
-                    sg.output_security_group(),
-                    Type='String'
-                )))
-                for sg in self.security_groups
-            ]
+            Ref(t.add_parameter(Parameter(
+                sg.output_security_group(),
+                Type='String'
+            )))
+            for sg in self.security_groups
+        ]
 
         user_data_refs = [
-                Ref(t.add_parameter(Parameter(
-                    '{}UserData{}'.format(self.name, i),
-                    Type='String',
-                    Default=' ',
-                    Description='{} UserData #{}'.format(self.name, i)
-                )))
-                for i in range(0, 4)
-                ]
-
+            Ref(t.add_parameter(Parameter(
+                '{}UserData{}'.format(self.name, i),
+                Type='String',
+                Default=' ',
+                Description='{} UserData #{}'.format(self.name, i)
+            )))
+            for i in range(0, 4)
+        ]
 
         # subnet list
         if self.private_subnet:
@@ -159,12 +156,12 @@ class ASGStack(BaseStack):
             sn_list = [i for i in self.vpc_stack.output_public_subnets()]
 
         sn_list = [
-                    Ref(t.add_parameter(Parameter(
-                        i,
-                        Type='String'
-                    )))
-                    for i  in sn_list
-                ]
+            Ref(t.add_parameter(Parameter(
+                i,
+                Type='String'
+            )))
+            for i in sn_list
+        ]
 
         elb_list = [
             Ref(t.add_parameter(Parameter(
@@ -173,7 +170,6 @@ class ASGStack(BaseStack):
             )))
             for elb in self.elb_stacks
         ]
-
 
         lconfig = t.add_resource(autoscaling.LaunchConfiguration(
             '{}LaunchConfiguration'.format(self.name),
@@ -196,22 +192,22 @@ class ASGStack(BaseStack):
                 "#!/bin/bash\n",
                 "exec > >(tee /var/log/user-data.log|logger ",
                 "-t user-data -s 2>/dev/console) 2>&1\n",
-                ] + user_data_refs + [
+            ] + user_data_refs + [
                 "\n",
                 "\n",
                 "curl -L https://gist.github.com/ibejohn818",
                 "/aa2bcd6743a59f62e1baa098d6365a61/raw/",
                 "/install-cfn-init.sh",
-                " -o /tmp/install-cfn-init.sh && chmod +x /tmp/install-cfn-init.sh",
+                " -o /tmp/install-cfn-init.sh && chmod +x /tmp/install-cfn-init.sh", # noqa
                 "\n",
                 "/tmp/install-cfn-init.sh ",
                 " {}AutoScalingGroup".format(self.stack_name),
                 " ", Ref("AWS::StackName"),
                 " ", Ref("AWS::Region"),
                 "\n",
-                ]
+            ]
             ))
-            ))
+        ))
 
         if self.keyname:
             lconfig.KeyName = self.keyname
@@ -233,7 +229,7 @@ class ASGStack(BaseStack):
                     WaitOnResourceSignals=True
                 )
             )
-           ))
+        ))
 
         t.add_output([
             Output(
@@ -241,6 +237,5 @@ class ASGStack(BaseStack):
                 Value=Ref(asg)
             )
         ])
-
 
         return t

@@ -1,7 +1,7 @@
 from stackformation import BaseStack
 from stackformation.aws.stacks import ec2, asg
 import troposphere.codedeploy as cdeploy
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -11,7 +11,6 @@ from troposphere import (
 
 class App(object):
 
-
     def __init__(self, name):
 
         self.name = name
@@ -19,7 +18,6 @@ class App(object):
         self.strategy = 'CodeDeployDefault.OneAtATime'
         self.targets = []
         self.load_balancers = []
-
 
     def add_load_balancer(self, lb):
         self.load_balancers.append(lb)
@@ -29,15 +27,16 @@ class App(object):
 
     def output_app(self):
         return "{}{}App".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                    )
+            self.stack.get_stack_name(),
+            self.name
+        )
 
     def output_group(self):
         return "{}{}Group".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                    )
+            self.stack.get_stack_name(),
+            self.name
+        )
+
     def add_to_template(self, template):
 
         t = template
@@ -50,7 +49,7 @@ class App(object):
             ServiceRoleArn=Ref(self.stack.role_parameter),
             ApplicationName=Ref(app),
             DeploymentConfigName=self.strategy
-            ))
+        ))
 
         group.AutoScalingGroups = []
         group.Ec2TagFilters = []
@@ -61,7 +60,7 @@ class App(object):
                 ec2_tag = t.add_parameter(Parameter(
                     target.output_tag_name(),
                     Type='String'
-                    ))
+                ))
 
                 group.Ec2TagFilters.append(cdeploy.Ec2TagFilters(
                     Key='Name',
@@ -74,7 +73,7 @@ class App(object):
                 asg_param = t.add_parameter(Parameter(
                     target.output_asg(),
                     Type='String'
-                    ))
+                ))
 
                 group.AutoScalingGroups.append(Ref(asg_param))
 
@@ -113,7 +112,7 @@ class CodeDeployStack(BaseStack):
         self.role_parameter = t.add_parameter(Parameter(
             self.role.output_role_arn(),
             Type='String'
-            ))
+        ))
 
         for app in self.apps:
             app.add_to_template(t)

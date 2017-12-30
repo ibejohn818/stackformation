@@ -63,14 +63,21 @@ __coverage: ## check code coverage quickly with the default Python
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
-coverage-term: clean ## test coverage terminal report ( Docker )
+flake8: ## Run flake8 check ( Docker )
+	docker build -f Dockerfile-test -t stackformation:test .
+	docker run --rm -it -u $(shell id -u):$(shell id -g) \
+		-v /etc/passwd:/etc/passwd \
+		-v $(shell pwd):$(shell pwd) -w \
+		$(shell pwd) stackformation:test flake8 stackformation/
+
+coverage-term: clean flake8 ## test coverage terminal report ( Docker )
 	docker build -f Dockerfile-test -t stackformation:test .
 	docker run --rm -it -u $(shell id -u):$(shell id -g) \
 		-v /etc/passwd:/etc/passwd \
 		-v $(shell pwd):$(shell pwd) -w \
 		$(shell pwd) stackformation:test python3 setup.py covterm
 
-coverage-html: clean ## test coverage html report ( Docker )
+coverage-html: clean flake8 ## test coverage html report ( Docker )
 	docker build -f Dockerfile-test -t stackformation:test .
 	docker run --rm -it -u $(shell id -u):$(shell id -g) \
 		-v /etc/passwd:/etc/passwd \

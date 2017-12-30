@@ -1,4 +1,3 @@
-import sys
 import os
 import stackformation
 import inflection
@@ -10,13 +9,12 @@ import shlex
 import logging
 import time
 import jmespath
-from stackformation.aws.stacks import (StackComponent)
 
 CWD = os.path.realpath(os.path.dirname(stackformation.__file__)).strip('/')
 
 
 ANSIBLE_INSTALL = {
-    'ubuntu':[
+    'ubuntu': [
         'sudo apt-get update',
         'sudo apt-get install -y ansible'
     ],
@@ -29,7 +27,7 @@ ANSIBLE_INSTALL = {
 }
 
 
-AMI_INFO={
+AMI_INFO = {
     'ubuntu': {
         'username': 'ubuntu',
         'ami_filters': [
@@ -78,10 +76,10 @@ class PackerImage(object):
 
     def get_ssh_user(self):
         users = {
-                'awslinux': 'ec2-user',
-                'ubuntu': 'ubuntu',
-                'centos': 'root',
-                }
+            'awslinux': 'ec2-user',
+            'ubuntu': 'ubuntu',
+            'centos': 'root',
+        }
 
         return users[self.os_type]
 
@@ -94,28 +92,26 @@ class PackerImage(object):
     def generate_packer_file(self):
 
         packer = {
-                'builders': self.builders,
-                'provisioners': self.provisioners
-                }
+            'builders': self.builders,
+            'provisioners': self.provisioners
+        }
 
         return packer
-
-
 
     def generate_playbook(self):
 
         pb = {
-                'name': '{} Playbook'.format(self.name),
-                'become': 'Yes',
-                'become_method': 'sudo',
-                'hosts': 'all',
-                'roles': []
+            'name': '{} Playbook'.format(self.name),
+            'become': 'Yes',
+            'become_method': 'sudo',
+            'hosts': 'all',
+            'roles': []
         }
 
         for role in sorted(self.roles, key=lambda e: e['weight']):
             line = {
-                    'role': role['role']
-                    }
+                'role': role['role']
+            }
             line.update(role['vars'])
             pb['roles'].append(line)
 
@@ -132,12 +128,11 @@ class PackerImage(object):
         self.save_packer_file()
         self.save_playbook()
 
-
     def save_packer_file(self):
         packer = self.generate_packer_file()
         file_name = "{}/packer.json".format(self.save_path())
         with open(file_name, "w") as f:
-                f.write(json.dumps(packer, indent=True))
+            f.write(json.dumps(packer, indent=True))
 
     def set_path(self, path):
         self.path = path
@@ -154,11 +149,12 @@ class PackerImage(object):
         return "{}/{}".format(self.base_path, dirname)
 
     def make_template_env(self, template_path):
-        env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=template_path))
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(
+                searchpath=template_path))
         return env
 
-    def add_role(self, role_name, vars = {}, weight=900):
-
+    def add_role(self, role_name, vars={}, weight=900):
         """Add ansible role to image
 
         Args:
@@ -167,16 +163,15 @@ class PackerImage(object):
 
         """
         new = {
-                'role': role_name,
-                'vars': vars,
-                'weight': weight
-                }
+            'role': role_name,
+            'vars': vars,
+            'weight': weight
+        }
         self.roles.append(new)
 
     def del_role(self, role_name):
         if role_name in self.roles:
             del self.roles[role_name]
-
 
     def describe(self):
         """Describe the image build
@@ -188,7 +183,6 @@ class PackerImage(object):
 
     def get_ami(self):
         raise Exception("Must implement get_ami()")
-
 
 
 class Ami(PackerImage):
@@ -212,39 +206,40 @@ class Ami(PackerImage):
         """
 
         filters = [
-                {
-                    'Name': 'architecture',
-                    'Values': ["x86_64"]
-                },
-                {
-                    'Name': 'root-device-type',
-                    'Values': ["ebs"]
-                },
-                {
-                    'Name': 'virtualization-type',
-                    'Values': ["hvm"]
-                },
-                {
-                    'Name': 'state',
-                    'Values': ['available']
-                },
-                {
-                    'Name': 'ena-support',
-                    'Values': ['true']
-                },
-                {
-                    'Name': 'image-type',
-                    'Values': ['machine']
-                },
-                {
-                    'Name': 'is-public',
-                    'Values': ['true']
-                },
-            ]
+            {
+                'Name': 'architecture',
+                'Values': ["x86_64"]
+            },
+            {
+                'Name': 'root-device-type',
+                'Values': ["ebs"]
+            },
+            {
+                'Name': 'virtualization-type',
+                'Values': ["hvm"]
+            },
+            {
+                'Name': 'state',
+                'Values': ['available']
+            },
+            {
+                'Name': 'ena-support',
+                'Values': ['true']
+            },
+            {
+                'Name': 'image-type',
+                'Values': ['machine']
+            },
+            {
+                'Name': 'is-public',
+                'Values': ['true']
+            },
+        ]
 
         filters.extend(AMI_INFO[self.os_type]['ami_filters'])
 
-        amis_query = self.boto_session.client("ec2").describe_images(Filters=filters)
+        amis_query = self.boto_session.client(
+            "ec2").describe_images(Filters=filters)
 
         # sort by CreationDate
         amis_query['Images'].sort(
@@ -264,11 +259,11 @@ class Ami(PackerImage):
             ec2 = self.boto_session.client('ec2')
 
             f = [
-                    {'Name': 'tag:ID',
-                        'Values': [self.name]},
-                    {'Name': 'tag:ACTIVE',
-                        'Values': ['YES']}
-                ]
+                {'Name': 'tag:ID',
+                 'Values': [self.name]},
+                {'Name': 'tag:ACTIVE',
+                 'Values': ['YES']}
+            ]
 
             try:
                 ami = ec2.describe_images(Owners=['self'], Filters=f)
@@ -278,20 +273,20 @@ class Ami(PackerImage):
 
             if len(ami['Images']) <= 0:
                 return
-                print("No active images have been created. Build an image and make --active")
+                print(
+                    "No active images have been created. Build an image and make --active") # noqa
 
             self._ami = ami['Images'][0]['ImageId']
 
         return self._ami
-
 
     def get_vpc_id(self):
 
         ec2 = self.boto_session.client('ec2')
 
         f = [
-                {'Name': 'is-default', 'Values': ['true']}
-            ]
+            {'Name': 'is-default', 'Values': ['true']}
+        ]
 
         vpc = ec2.describe_vpcs(Filters=f)
 
@@ -302,28 +297,27 @@ class Ami(PackerImage):
         self.region = self.boto_session.get_conf('region_name')
 
         aws_builder = {
-                'type':'amazon-ebs',
-                'source_ami': self.get_base_ami(),
-                'instance_type':'t2.medium',
-                'communicator': 'ssh',
-                'ssh_pty': 'true',
-                'ssh_username': self.get_ssh_user(),
-                'ami_name':"AMI {} {}".format(self.name, int(time.time())),
-                'region':self.region,
-                'vpc_id': self.get_vpc_id()
+            'type': 'amazon-ebs',
+            'source_ami': self.get_base_ami(),
+            'instance_type': 't2.medium',
+            'communicator': 'ssh',
+            'ssh_pty': 'true',
+            'ssh_username': self.get_ssh_user(),
+            'ami_name': "AMI {} {}".format(self.name, int(time.time())),
+            'region': self.region,
+            'vpc_id': self.get_vpc_id()
 
         }
 
         shell = {
-                'type': 'shell',
-                'inline': ANSIBLE_INSTALL[self.os_type]
-                }
-
+            'type': 'shell',
+            'inline': ANSIBLE_INSTALL[self.os_type]
+        }
 
         ansible = {
-                'type': 'ansible-local',
-                'playbook_file': "{}/playbook.yaml".format(self.save_path())
-                }
+            'type': 'ansible-local',
+            'playbook_file': "{}/playbook.yaml".format(self.save_path())
+        }
 
         if Ami.ANSIBLE_DIR:
             ansible['playbook_dir'] = Ami.ANSIBLE_DIR
@@ -337,16 +331,17 @@ class Ami(PackerImage):
 
         self.generate()
 
-        cmd = "packer build -machine-readable {}/packer.json ".format(self.save_path())
+        cmd = "packer build -machine-readable {}/packer.json ".format(
+            self.save_path())
 
         cmd = subprocess.Popen(shlex.split(cmd),
-                stderr=subprocess.PIPE,
-                stdout=subprocess.PIPE
-                )
+                               stderr=subprocess.PIPE,
+                               stdout=subprocess.PIPE
+                               )
 
         while cmd.poll() is None:
             line = cmd.stdout.readline().decode('utf-8')
-            if line is not None and len(line)>0:
+            if line is not None and len(line) > 0:
 
                 msg = line.strip().split(",")
 
@@ -358,7 +353,7 @@ class Ami(PackerImage):
 
                 # logger.info("RAW: {}".format("|".join(msg)))
 
-                logger.info(out.replace("%!(PACKER_COMMA)",","))
+                logger.info(out.replace("%!(PACKER_COMMA)", ","))
 
         if cmd.returncode != 0:
             raise Exception("AMI BUILD FAILED")
@@ -373,7 +368,6 @@ class Ami(PackerImage):
             if len(ami_len) <= 0:
                 active = True
 
-
         self.tag_ami([ami[1]])
 
         if active:
@@ -383,21 +377,22 @@ class Ami(PackerImage):
     def promote_ami(self, ami_id):
 
         f = [
-                {'Name': 'tag:ID',
-                    'Values':[self.name]}
-            ]
+            {'Name': 'tag:ID',
+             'Values': [self.name]}
+        ]
 
         ec2 = self.boto_session.client('ec2')
 
         try:
-            amis = ec2.describe_images(Owners=['self'],Filters=f)
+            amis = ec2.describe_images(Owners=['self'], Filters=f)
             ids = jmespath.search('Images[].ImageId', amis)
             if len(ids) > 0:
-                res = ec2.delete_tags(Resources=ids, Tags=[{'Key': 'ACTIVE'}])
+                ec2.delete_tags(Resources=ids, Tags=[{'Key': 'ACTIVE'}])
         except Exception as e:
             print(str(e))
 
-        ec2.create_tags(Resources=[ami_id],Tags=[{'Key':'ACTIVE','Value':'YES'}])
+        ec2.create_tags(Resources=[ami_id], Tags=[
+                        {'Key': 'ACTIVE', 'Value': 'YES'}])
 
         return ids
 
@@ -409,8 +404,8 @@ class Ami(PackerImage):
             ami_ids = [ami_ids]
 
         params = {
-            'Resources':ami_ids,
-            'Tags':[
+            'Resources': ami_ids,
+            'Tags': [
                 {'Key': 'ID', 'Value': self.name},
                 {'Key': 'OS', 'Value': self.os_type},
                 {'Key': 'STACKFORMATION', 'Value': 'STACKFORMATION'},
@@ -419,15 +414,14 @@ class Ami(PackerImage):
 
         ec2.create_tags(**params)
 
-
     def query_amis(self):
 
         ec2 = self.boto_session.client('ec2')
 
         f = [
-                {'Name': 'tag:ID',
-                    'Values': [self.name]}
-            ]
+            {'Name': 'tag:ID',
+             'Values': [self.name]}
+        ]
 
         try:
             amis = ec2.describe_images(Owners=['self'], Filters=f)
@@ -450,10 +444,9 @@ class Ami(PackerImage):
 
         ami = ami['Images'][0]
 
-        res = ec2.deregister_image(ImageId=ami['ImageId'])
+        ec2.deregister_image(ImageId=ami['ImageId'])
 
         if ami['RootDeviceType'] == 'ebs':
             for snap_id in [bdm['Ebs']['SnapshotId'] for bdm in
                             ami['BlockDeviceMappings'] if 'Ebs' in bdm]:
                 ec2.delete_snapshot(SnapshotId=snap_id)
-
