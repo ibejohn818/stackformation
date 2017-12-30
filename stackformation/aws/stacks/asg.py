@@ -180,21 +180,18 @@ class ASGStack(BaseStack):
                 "exec > >(tee /var/log/user-data.log|logger ",
                 "-t user-data -s 2>/dev/console) 2>&1\n",
                 ] + user_data_refs + [
-                "\n", 
-                "#yum update -y aws-cfn-bootstrap",
+                "\n",
                 "\n",
                 "curl -L https://gist.github.com/ibejohn818",
                 "/aa2bcd6743a59f62e1baa098d6365a61/raw/",
-                "/ubuntu-init.sh",
-                " -o /tmp/ubuntu-init.sh && chmod +x /tmp/ubuntu-init.sh",
+                "/install-cfn-init.sh",
+                " -o /tmp/install-cfn-init.sh && chmod +x /tmp/install-cfn-init.sh",
                 "\n",
-                "/tmp/ubuntu-init.sh",
+                "/tmp/install-cfn-init.sh ",
+                " {}AutoScalingGroup".format(self.stack_name),
+                " ", Ref("AWS::StackName"),
+                " ", Ref("AWS::Region"),
                 "\n",
-                #] + wait_cmd + [
-                "cfn-signal -e 0",
-                "    --resource {}AutoScalingGroup".format(self.stack_name),
-                "    --stack ", Ref("AWS::StackName"),
-                "    --region ", Ref("AWS::Region"), "\n",
                 ]
             ))
             ))

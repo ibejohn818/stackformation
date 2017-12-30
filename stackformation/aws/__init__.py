@@ -370,6 +370,7 @@ class Ami(PackerImage):
         self.tag_ami([ami[1]])
 
         if active:
+            logger.info("SETTING AMI TO ACTIVE:YES")
             self.promote_ami(ami[1])
 
     def promote_ami(self, ami_id):
