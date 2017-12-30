@@ -3,7 +3,7 @@ from stackformation.aws import Ami
 import logging
 from colorama import Fore, Style, Back
 from troposphere import ec2
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -224,7 +224,6 @@ class EC2Stack(BaseStack):
             )
         ])
 
-
         return t
 
     def output_instance(self):
@@ -233,5 +232,5 @@ class EC2Stack(BaseStack):
 
     def output_tag_name(self):
         return "{}{}TagName".format(
-                self.get_stack_name(),
-                self.stack_name)
+            self.get_stack_name(),
+            self.stack_name)

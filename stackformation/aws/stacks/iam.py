@@ -3,7 +3,7 @@ from awacs import aws
 import awacs.sts
 import awacs.s3
 import troposphere.iam as iam
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -60,21 +60,21 @@ class IAMRole(IAMBase):
         else:
             principal_title = "Service"
 
-        role = t.add_resource(iam.Role(
-            self.name,
-            AssumeRolePolicyDocument=aws.Policy(
-                Statement=[
-                    aws.Statement(
-                        Action=[awacs.sts.AssumeRole],
-                        Effect=aws.Allow,
-                        Principal=aws.Principal(principal_title, self.principals)
-                    )
-                ]
-            ),
-            Path="/",
-            Policies=[],
-            ManagedPolicyArns=[]
-        ))
+        role = t.add_resource(
+            iam.Role(
+                self.name,
+                AssumeRolePolicyDocument=aws.Policy(
+                    Statement=[
+                        aws.Statement(
+                            Action=[
+                                awacs.sts.AssumeRole],
+                            Effect=aws.Allow,
+                            Principal=aws.Principal(
+                                principal_title,
+                                self.principals))]),
+                Path="/",
+                Policies=[],
+                ManagedPolicyArns=[]))
 
         for p in self.policies:
             p._bind_role(t, role)
@@ -381,19 +381,21 @@ class CloudWatchLogs(IAMPolicy):
             )
         ))
 
+
 class CodeDeployRole(IAMRole):
 
     def __init__(self, name):
         super(CodeDeployRole, self).__init__(
-        "{}CodeDeploy".format(name),
-        [
-            'codedeploy.us-west-1.amazonaws.com',
-            'codedeploy.us-west-2.amazonaws.com',
-            'codedeploy.us-east-1.amazonaws.com',
-            'codedeploy.us-east-2.amazonaws.com',
-            'codedeploy.eu-west-1.amazonaws.com',
-            'codedeploy.ap-southeast-2.amazonaws.com'
-        ])
+            "{}CodeDeploy".format(name),
+            [
+                'codedeploy.us-west-1.amazonaws.com',
+                'codedeploy.us-west-2.amazonaws.com',
+                'codedeploy.us-east-1.amazonaws.com',
+                'codedeploy.us-east-2.amazonaws.com',
+                'codedeploy.eu-west-1.amazonaws.com',
+                'codedeploy.ap-southeast-2.amazonaws.com'
+            ])
+
 
 class CodeDeployPolicy(IAMPolicy):
 
@@ -415,9 +417,9 @@ class CodeDeployPolicy(IAMPolicy):
                             aws.Action('elasticloadbalancing', 'DescribeLoadBalancers'),
                             aws.Action('elasticloadbalancing', 'DescribeInstanceHealth'),
                             aws.Action('elasticloadbalancing',
-                                    'RegisterInstancesWithLoadBalancer'),
+                                       'RegisterInstancesWithLoadBalancer'),
                             aws.Action('elasticloadbalancing',
-                                    'DeregisterInstancesFromLoadBalancer'),
+                                       'DeregisterInstancesFromLoadBalancer'),
                             aws.Action('ec2', 'Describe*'),
                             aws.Action('ec2', 'TerminateInstances'),
                             aws.Action('tag', 'GetTags'),
@@ -464,6 +466,7 @@ class IAMUser(IAMBase):
         self.managed_policy_arns.append(
             "arn:aws:iam::aws:policy/{}".format(name)
         )
+
     def _build_template(self, template):
 
         t = template
@@ -515,10 +518,9 @@ class IAMUser(IAMBase):
             ))
 
             user.LoginProfile = iam.LoginProfile(
-                    Password=Ref(def_passwd_param),
-                    PasswordResetRequired=True
-                )
-
+                Password=Ref(def_passwd_param),
+                PasswordResetRequired=True
+            )
 
         for policy in self.policies:
             policy._bind_role(t, self)
@@ -534,32 +536,32 @@ class IAMUser(IAMBase):
             )
         ])
 
-
     def output_user(self):
         return "{}{}IAMUser".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                )
+            self.stack.get_stack_name(),
+            self.name
+        )
 
     def output_access_key(self):
         return "{}{}IAMAccessKey".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                )
+            self.stack.get_stack_name(),
+            self.name
+        )
 
     def output_secret_key(self):
         return "{}{}IAMSecretKey".format(
-                    self.stack.get_stack_name(),
-                    self.name
-                )
-
+            self.stack.get_stack_name(),
+            self.name
+        )
 
 
 class AdminUser(IAMUser):
     pass
 
+
 class CodeDeployUser(IAMUser):
     pass
+
 
 class IAMStack(BaseStack):
 
