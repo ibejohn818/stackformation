@@ -116,7 +116,7 @@ class CustomPolicy(IAMPolicy):
     Args:
         name (str): policy name
         statements (List[:obj:`awacs.aws.Statement`]): List of policy statement objects.
-    """
+    """ # noqa
 
     def __init__(self, name, statements=None):
         super(CustomPolicy, self).__init__(name)
@@ -414,8 +414,8 @@ class CodeDeployPolicy(IAMPolicy):
                         Resource=['*'],
                         Action=[
                             aws.Action('autoscaling', '*'),
-                            aws.Action('elasticloadbalancing', 'DescribeLoadBalancers'),
-                            aws.Action('elasticloadbalancing', 'DescribeInstanceHealth'),
+                            aws.Action('elasticloadbalancing', 'DescribeLoadBalancers'),  # noqa
+                            aws.Action('elasticloadbalancing', 'DescribeInstanceHealth'), # noqa
                             aws.Action('elasticloadbalancing',
                                        'RegisterInstancesWithLoadBalancer'),
                             aws.Action('elasticloadbalancing',

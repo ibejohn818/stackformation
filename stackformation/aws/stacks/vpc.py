@@ -271,9 +271,9 @@ class VPCStack(BaseStack, SoloStack):
             "VPC",
             CidrBlock="{}.0.0/16".format(self.base_cidr),
             EnableDnsSupport="true" if self.enable_dns else "false",
-            EnableDnsHostnames="true" if self.enable_dns_hostnames else "false",
+            EnableDnsHostnames="true" if self.enable_dns_hostnames else "false", # noqa
             Tags=Tags(
-                Name=inflection.humanize(inflection.underscore(self.get_stack_name()))
+                Name=inflection.humanize(inflection.underscore(self.get_stack_name())) # noqa
             )
         ))
 
@@ -301,7 +301,7 @@ class VPCStack(BaseStack, SoloStack):
         # )
         # ])
 
-        igwa = t.add_resource(ec2.VPCGatewayAttachment(
+        t.add_resource(ec2.VPCGatewayAttachment(
             'InternetGatewayAttachment',
             VpcId=Ref(vpc),
             InternetGatewayId=Ref(igw)

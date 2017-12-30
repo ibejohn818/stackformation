@@ -1,7 +1,7 @@
 from stackformation.aws.stacks import BaseStack
 from stackformation.aws import Ami
 import logging
-from colorama import Fore, Style, Back
+from colorama import Fore, Style, Back # noqa
 from troposphere import ec2
 from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
