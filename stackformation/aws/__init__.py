@@ -434,4 +434,24 @@ class Ami(PackerImage):
 
         return amis['Images']
 
+    def delete(self, ami_id=None):
+
+        if not isinstance(ami_id, list):
+            ami_id = [ami_id]
+
+        ec2 = self.boto_session.client('ec2')
+
+        ami = ec2.describe_images(ImageIds=ami_id)
+
+        if len(ami['Images']) <= 0:
+            return False
+
+        ami = ami['Images'][0]
+
+        res = ec2.deregister_image(ImageId=ami['ImageId'])
+
+        if ami['RootDeviceType'] == 'ebs':
+            for snap_id in [bdm['Ebs']['SnapshotId'] for bdm in
+                            ami['BlockDeviceMappings'] if 'Ebs' in bdm]:
+                ec2.delete_snapshot(SnapshotId=snap_id)
 
