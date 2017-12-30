@@ -60,7 +60,7 @@ def list_images():
 
     for image in images:
 
-        click.echo('----------------')
+        click.echo('------------------------')
 
         amis = image.query_amis()
         click.echo(
@@ -69,6 +69,7 @@ def list_images():
                 image.name,
                 len(amis),
                 Style.RESET_ALL))
+        click.echo('------------------------')
         if len(amis) <= 0:
             click.echo(
                 "   {}No AMI's have been built{}".format(
@@ -91,7 +92,6 @@ def list_images():
                         ami['ImageId'],
                         flag,
                         Style.RESET_ALL))
-        click.echo('----------------')
 
 @images.command(help="", name='generate')
 @click.argument("name", required=True)

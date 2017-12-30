@@ -74,6 +74,7 @@ class PackerImage(object):
         self.builders = []
         self.provisioners = []
         self.promote = False
+        self._ami = None
 
     def get_ssh_user(self):
         users = {
@@ -258,26 +259,30 @@ class Ami(PackerImage):
 
     def get_ami(self):
 
-        ec2 = self.boto_session.client('ec2')
+        if self._ami is None:
 
-        f = [
-                {'Name': 'tag:ID',
-                    'Values': [self.name]},
-                {'Name': 'tag:ACTIVE',
-                    'Values': ['YES']}
-            ]
+            ec2 = self.boto_session.client('ec2')
 
-        try:
-            ami = ec2.describe_images(Owners=['self'], Filters=f)
-        except Exception as e:
-            print(str(e))
-            print("Error with AMI Query")
+            f = [
+                    {'Name': 'tag:ID',
+                        'Values': [self.name]},
+                    {'Name': 'tag:ACTIVE',
+                        'Values': ['YES']}
+                ]
 
-        if len(ami['Images']) <= 0:
-            return
-            print("No active images have been created. Build an image and make --active")
+            try:
+                ami = ec2.describe_images(Owners=['self'], Filters=f)
+            except Exception as e:
+                print(str(e))
+                print("Error with AMI Query")
 
-        return ami['Images'][0]['ImageId']
+            if len(ami['Images']) <= 0:
+                return
+                print("No active images have been created. Build an image and make --active")
+
+            self._ami = ami['Images'][0]['ImageId']
+
+        return self._ami
 
 
     def get_vpc_id(self):
