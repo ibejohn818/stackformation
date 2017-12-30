@@ -9,21 +9,19 @@ import logging
 import os
 from stackformation.utils import (match_stack)
 import jinja2
-from colorama import Fore, Style, Back
-import re
-from pprint import pprint
+from colorama import Fore, Style
 import jmespath
 
 INFRA_FILE = "infra.py"
 
 HELP = {
 
-    'images_build':"""
+    'images_build': """
 Select the image to build from your configured images in your {0} file.
 If this is the first image being built it will automatically be made active.
 If there are more than one builds present, make sure to mark the image --active/-a
 if you wish for this to be the current build in-scope
-""".format(INFRA_FILE)
+""".format(INFRA_FILE) # noqa
 
 
 
@@ -94,13 +92,14 @@ def list_images():
                         flag,
                         Style.RESET_ALL))
 
-@images.command(help="", name='generate')
-@click.argument("name", required=True)
-def generate_image(name):
 
-    infra = load_infra_file()
+# @images.command(help="", name='generate')
+# @click.argument("name", required=True)
+# def generate_image(name):
 
-    images = infra.list_images()
+    # infra = load_infra_file()
+
+    # images = infra.list_images()
 
     # for image in images:
     # if image.name.startswith(name):
@@ -108,7 +107,12 @@ def generate_image(name):
 
 @images.command(help=HELP['images_build'], name='build')
 @click.argument("name", default="")
-@click.option('--active','-a', is_flag=True, default=False, help='Make image active')
+@click.option(
+    '--active',
+    '-a',
+    is_flag=True,
+    default=False,
+    help='Make image active')
 def build_image(name=None, active=False):
 
     infra = load_infra_file()
@@ -138,11 +142,11 @@ def build_image(name=None, active=False):
     for image in results:
         image.build(active)
 
+
 @images.command(help="", name='activate')
 @click.argument("name", required=True)
 @click.option('--id', required=True)
 def images_activate(name, id):
-
 
     infra = load_infra_file()
 
@@ -158,7 +162,9 @@ def images_activate(name, id):
         click.echo("No image matching the given name")
         exit(1)
 
-    click.confirm("Make {} the active AMI for {}".format(id, result.name), abort=True)
+    click.confirm(
+        "Make {} the active AMI for {}".format(
+            id, result.name), abort=True)
 
     result.promote_ami(id)
 
@@ -167,7 +173,8 @@ def images_activate(name, id):
 
 @images.command(help="", name='prune')
 @click.argument("name", required=True)
-@click.option('--force', is_flag=True, default=False, help="Force deletion of active AMI")
+@click.option('--force', is_flag=True, default=False,
+              help="Force deletion of active AMI")
 def images_prune(name, force):
 
     infra = load_infra_file()
@@ -184,15 +191,14 @@ def images_prune(name, force):
         click.echo("No image matching the given name")
         exit(1)
 
-    click.confirm("Prune all in-active images for {}".format(result.name), abort=True)
+    click.confirm(
+        "Prune all in-active images for {}".format(result.name), abort=True)
 
     amis = result.query_amis()
 
     if len(amis) <= 0:
         click.echo("No images available")
         exit(0)
-
-    to_delete = []
 
     for ami in amis:
         if not force:
@@ -336,7 +342,7 @@ def dependencies():
 
         result = {
             'Stack': (stack.get_stack_name(), str(stack).split(' ')[0][1:]),
-            'Dependencies': [(k, str(v).split(' ')[0][1:]) for k, v in deps.items()]
+            'Dependencies': [(k, str(v).split(' ')[0][1:]) for k, v in deps.items()] # noqa
         }
         results.append(result)
 

@@ -1,8 +1,6 @@
 from stackformation.aws.stacks import BaseStack
-import inflection
-from troposphere import ec2
 import troposphere.elasticloadbalancing as elb
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -37,16 +35,16 @@ class ELBStack(BaseStack):
         self.security_groups.append(group)
 
     def add_listener(self, proto, port_in, port_out, **kwargs):
-        l = elb.Listener(
+        lst = elb.Listener(
             Protocol=proto,
             LoadBalancerPort=port_in,
             InstancePort=port_out
         )
 
         if kwargs.get('ssl_id'):
-            l.SSLCertificateId = kwargs.get('ssl_id')
+            lst.SSLCertificateId = kwargs.get('ssl_id')
 
-        self.listeners.append(l)
+        self.listeners.append(lst)
 
     def build_template(self):
 
@@ -62,7 +60,6 @@ class ELBStack(BaseStack):
             )))
             for group in self.security_groups
         ]
-
 
         lb = t.add_resource(elb.LoadBalancer(
             '{}ELB'.format(self.stack_name),

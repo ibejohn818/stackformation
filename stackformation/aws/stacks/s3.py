@@ -1,5 +1,5 @@
 from stackformation.aws.stacks import BaseStack
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,

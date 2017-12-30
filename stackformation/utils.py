@@ -32,7 +32,7 @@ def match_stack(selector, stack):
     Returns:
         :obj:`stackformation.BaseStack`: If stack matches
         bool: False if selector did not match
-    """
+    """ # noqa
     if not isinstance(selector, list):
         selector = selector.split(' ')
 

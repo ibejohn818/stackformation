@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import (BaseStack, SoloStack)
 from troposphere import ec2
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
