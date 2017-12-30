@@ -29,7 +29,7 @@ setup_requirements = [
 
 setup(
     name='jh-stackformation',
-    version='0.2.0',
+    version='0.2.1',
     description="AWS CloudFormation framework",
     long_description=readme + '\n\n' + history,
     author="John Hardy",
