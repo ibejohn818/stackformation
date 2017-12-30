@@ -4,11 +4,10 @@ import re
 import datetime
 import pytz
 import time
-import sys
 import troposphere
 import inflection
 import botocore
-from colorama import Fore, Style
+from colorama import Fore, Style, Back # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +64,7 @@ class BaseStack(StackComponent):
         _deploy_event (dict): stub to store previous event during deploying() lookups
         template_components (dict): template components added to stack instance
 
-    """
+    """ # noqa
 
     def __init__(self, name, weight=100, **kwargs):
 
@@ -226,7 +225,7 @@ class BaseStack(StackComponent):
         cf = infra.boto_session.client("cloudformation")
 
         try:
-            chk = cf.describe_stacks(StackName=self.get_remote_stack_name())
+            cf.describe_stacks(StackName=self.get_remote_stack_name())
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "ValidationError":
                 present = False
@@ -239,7 +238,7 @@ class BaseStack(StackComponent):
 
         template = self.build_template()
         parameters = self.get_parameters()
-        template_vars = self.render_template_components(env[0], context)
+        template_vars = self.render_template_components(env[0], context) # noqa
 
         self.before_deploy(context, parameters)
 
@@ -254,14 +253,14 @@ class BaseStack(StackComponent):
 
         try:
             if present:
-                res = cf.update_stack(**dep_kw)
+                cf.update_stack(**dep_kw)
                 logger.info('UPDATING STACK: {}'.format(self.get_stack_name()))
             else:
-                res = cf.create_stack(**dep_kw)
+                cf.create_stack(**dep_kw)
                 logger.info('CREATING STACK: {}'.format(self.get_stack_name()))
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']
-            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):
+            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])): # noqa
                 return False
             else:
                 raise e
@@ -276,7 +275,7 @@ class BaseStack(StackComponent):
         cf = infra.boto_session.client("cloudformation")
 
         try:
-            chk = cf.describe_stacks(StackName=self.get_remote_stack_name())
+            cf.describe_stacks(StackName=self.get_remote_stack_name())
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "ValidationError":
                 present = False
@@ -296,11 +295,11 @@ class BaseStack(StackComponent):
         }
 
         try:
-            res = cf.delete_stack(**kw)
+            cf.delete_stack(**kw)
             logger.info('DESTROYING STACK: {}'.format(self.get_stack_name()))
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']
-            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):
+            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])): # noqa
                 return False
             else:
                 raise e
@@ -328,7 +327,7 @@ class BaseStack(StackComponent):
                 logger.warn(e)
                 return
 
-        name = self._deploy_event['stack_name']
+        name = self._deploy_event['stack_name'] # noqa
         ts = self._deploy_event['ts']
         stack_id = self._deploy_event['stack_id']
         token = self._deploy_event['token']
@@ -419,7 +418,7 @@ class BaseStack(StackComponent):
     def review(self, infra):
 
         # get stack dependencies
-        deps = infra.get_dependent_stacks(self)
+        deps = infra.get_dependent_stacks(self) # noqa
 
         cf = self.infra.boto_session.client('cloudformation')
 

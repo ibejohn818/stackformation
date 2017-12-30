@@ -21,7 +21,7 @@ Select the image to build from your configured images in your {0} file.
 If this is the first image being built it will automatically be made active.
 If there are more than one builds present, make sure to mark the image --active/-a
 if you wish for this to be the current build in-scope
-""".format(INFRA_FILE)
+""".format(INFRA_FILE) # noqa
 
 
 
@@ -93,13 +93,13 @@ def list_images():
                         Style.RESET_ALL))
 
 
-@images.command(help="", name='generate')
-@click.argument("name", required=True)
-def generate_image(name):
+# @images.command(help="", name='generate')
+# @click.argument("name", required=True)
+# def generate_image(name):
 
-    infra = load_infra_file()
+    # infra = load_infra_file()
 
-    images = infra.list_images()
+    # images = infra.list_images()
 
     # for image in images:
     # if image.name.startswith(name):
@@ -199,8 +199,6 @@ def images_prune(name, force):
     if len(amis) <= 0:
         click.echo("No images available")
         exit(0)
-
-    to_delete = []
 
     for ami in amis:
         if not force:
@@ -344,7 +342,7 @@ def dependencies():
 
         result = {
             'Stack': (stack.get_stack_name(), str(stack).split(' ')[0][1:]),
-            'Dependencies': [(k, str(v).split(' ')[0][1:]) for k, v in deps.items()]
+            'Dependencies': [(k, str(v).split(' ')[0][1:]) for k, v in deps.items()] # noqa
         }
         results.append(result)
 

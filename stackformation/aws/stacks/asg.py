@@ -83,12 +83,12 @@ class ASGStack(BaseStack):
             Description='{} Instance Type'.format(self.stack_name)
         ))
 
-        inst_tag_name = t.add_parameter(Parameter(
-            'Input{}ASGTagName'.format(self.stack_name),
-            Type='String',
-            Default='{} ASG'.format(self.name),
-            Description='{} Instance Type'.format(self.stack_name)
-        ))
+        # inst_tag_name = t.add_parameter(Parameter(
+        # 'Input{}ASGTagName'.format(self.stack_name),
+        # Type='String',
+        # Default='{}ASG'.format(self.name),
+        # Description='{} Instance Type'.format(self.stack_name)
+        # ))
 
         # termination policies
         term_policies = t.add_parameter(Parameter(
@@ -198,7 +198,7 @@ class ASGStack(BaseStack):
                 "curl -L https://gist.github.com/ibejohn818",
                 "/aa2bcd6743a59f62e1baa098d6365a61/raw/",
                 "/install-cfn-init.sh",
-                " -o /tmp/install-cfn-init.sh && chmod +x /tmp/install-cfn-init.sh",
+                " -o /tmp/install-cfn-init.sh && chmod +x /tmp/install-cfn-init.sh", # noqa
                 "\n",
                 "/tmp/install-cfn-init.sh ",
                 " {}AutoScalingGroup".format(self.stack_name),

@@ -47,7 +47,7 @@ class EC2HighCpuAlarm(EC2CpuBaseAlarm):
     Returns:
         void
 
-    """
+    """ # noqa
 
     def __init__(self, ec2_stack):
         name = '{}HighCpuAlarm'.format(ec2_stack.get_stack_name())
