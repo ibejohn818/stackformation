@@ -351,6 +351,135 @@ class S3ReadBucketAccess(IAMPolicy):
             )
         ))
 
+class IAMUser(IAMBase):
+
+    def __init__(self, name):
+
+        super(IAMUser, self).__init__(name)
+        self.policies = []
+        self.managed_policy_arns = []
+        self._generate_key = True,
+        self._login = None
+        self._allow_console = False
+
+    def set_login_name(self, login):
+        self._login = login
+
+    def disable_key(self):
+        self._generate_key = False
+
+    def enable_key(self):
+        self._generate_key = True
+
+    def allow_console_login(self):
+        self._allow_console = True
+
+    def disable_console_login(self):
+        self._allow_console = False
+
+    def add_policy(self, policy):
+        self.policies.append(policy)
+
+    def add_managed_arn(self, name):
+        self.managed_policy_arns.append(
+            "arn:aws:iam::aws:policy/{}".format(name)
+        )
+    def _build_template(self, template):
+
+        t = template
+
+        user = t.add_resource(iam.User(
+            self.name,
+            Path="/",
+            Policies=[],
+            ManagedPolicyArns=[]
+        ))
+
+        if self._login is not None:
+            user.UserName = self._login
+
+        if self._generate_key:
+            key_serial_param = t.add_parameter(Parameter(
+                'Input{}IAMUserKeySerial'.format(self.name),
+                Type='String',
+                Default='1',
+                Description='Serial for User:{} key'.format(self.name)
+            ))
+
+            key = t.add_resource(iam.AccessKey(
+                '{}IAMAccessKey'.format(self.name),
+                Serial=Ref(key_serial_param),
+                Status='Active',
+                UserName=Ref(user)
+            ))
+
+            t.add_output([
+                Output(
+                    '{}IAMSecretKey'.format(self.name),
+                    Value=GetAtt(key.title, 'SecretAccessKey'),
+                    Description='IAM SecretKey for {}'.format(self.name)
+                ),
+                Output(
+                    '{}IAMAccessKey'.format(self.name),
+                    Value=Ref(key),
+                    Description='IAM AccessKey for {}'.format(self.name)
+                )
+            ])
+
+        if self._allow_console:
+            def_passwd_param = t.add_parameter(Parameter(
+                'Input{}DefaultConsolePasswd'.format(self.name),
+                Type='String',
+                Default='D3fau1t9a55w0r6_c4ang3m3',
+                Description='Default console passwd for {}'.format(self.name)
+            ))
+
+            user.LoginProfile = iam.LoginProfile(
+                    Password=Ref(def_passwd_param),
+                    PasswordResetRequired=True
+                )
+
+
+        for policy in self.policies:
+            policy._bind_role(t, self)
+
+        for arn in self.managed_policy_arns:
+            user.ManagedPolicyArns.append(arn)
+
+        t.add_output([
+            Output(
+                '{}IAMUser'.format(self.name),
+                Value=Ref(user),
+                Description='{} User Output'.format(self.name)
+            )
+        ])
+
+
+    def output_user(self):
+        return "{}{}IAMUser".format(
+                    self.stack.get_stack_name(),
+                    self.name
+                )
+
+    def output_access_key(self):
+        return "{}{}IAMAccessKey".format(
+                    self.stack.get_stack_name(),
+                    self.name
+                )
+
+    def output_secret_key(self):
+        return "{}{}IAMSecretKey".format(
+                    self.stack.get_stack_name(),
+                    self.name
+                )
+
+
+
+class AdminUser(IAMUser):
+    pass
+
+class CodeDeployUser(IAMUser):
+    pass
 
 class IAMStack(BaseStack):
 
@@ -363,6 +492,7 @@ class IAMStack(BaseStack):
         self.roles = []
         self.policies = []
         self.users = []
+        self.groups = []
 
     def find_role(self, clazz, name=None):
 
@@ -389,5 +519,8 @@ class IAMStack(BaseStack):
 
         for role in self.roles:
             role._build_template(t)
+
+        for user in self.users:
+            user._build_template(t)
 
         return t
