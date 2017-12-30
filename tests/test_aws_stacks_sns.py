@@ -1,5 +1,5 @@
 import pytest
-from stackformation.aws.stacks import logs, vpc
+from stackformation.aws.stacks import sns, vpc
 from stackformation import Infra
 from stackformation import utils
 
@@ -17,24 +17,14 @@ def test_infra():
             'vpc_stack': vpc_stack
             }
 
-def test_logs(test_infra):
+def test_sns(test_infra):
 
     infra = test_infra['infra']
     vpc_stack = test_infra['vpc_stack']
     test_infra = test_infra['test_infra']
 
-    log_stack = test_infra.add_stack(logs.LogStack('test'))
+    sns_stack = infra.add_stack(sns.SNSTopicStack('test'))
 
-    test_logs = log_stack.add_group(logs.LogGroup('test'))
+    slack = sns_stack.add_subscription(sns.SlackSubscription('test'))
 
-    find_test = log_stack.find_group('test')
-
-    assert find_test.name == 'test'
-
-    find_none = log_stack.find_group('none')
-
-    assert find_none is None
-
-    assert test_logs.output_log_group() == 'TestTestTestLogstestLogGroup'
-
-    t = log_stack.build_template()
+    t = sns_stack.build_template()
