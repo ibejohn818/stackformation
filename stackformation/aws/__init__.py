@@ -356,6 +356,8 @@ class Ami(PackerImage):
                     if msg[4] == 'id':
                         ami = msg[5].strip().split(":")
 
+                # logger.info("RAW: {}".format("|".join(msg)))
+
                 logger.info(out.replace("%!(PACKER_COMMA)",","))
 
         if cmd.returncode != 0:
@@ -432,7 +434,7 @@ class Ami(PackerImage):
         except Exception as e:
             print(str(e))
 
-        return amis['Images']
+        return sorted(amis['Images'], key=lambda e: e['CreationDate'])
 
     def delete(self, ami_id=None):
 

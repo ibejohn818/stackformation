@@ -148,7 +148,7 @@ def images_activate(name, id):
 
     images = infra.list_images()
 
-    results = False
+    result = False
 
     for image in images:
         if name == image.name:
@@ -174,7 +174,7 @@ def images_prune(name, force):
 
     images = infra.list_images()
 
-    results = False
+    result = False
 
     for image in images:
         if name == image.name:
