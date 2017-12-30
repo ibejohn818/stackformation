@@ -1,5 +1,5 @@
 from stackformation import BaseStack
-from stackformation.aws.stacks import ec2
+from stackformation.aws.stacks import ec2, asg
 import troposphere.codedeploy as cdeploy
 from troposphere import (
     FindInMap, GetAtt, Join,
@@ -17,18 +17,27 @@ class App(object):
         self.name = name
         self.stack = None
         self.strategy = 'CodeDeployDefault.OneAtATime'
-        self.target = None
+        self.targets = []
+        self.load_balancers = []
 
+
+    def add_load_balancer(self, lb):
+        self.load_balancers.append(lb)
 
     def add_target(self, target):
-        self.target = target
+        self.targets.append(target)
 
     def output_app(self):
-        return "{}{}CodeDeployApp".format(
+        return "{}{}App".format(
                     self.stack.get_stack_name(),
                     self.name
                     )
 
+    def output_group(self):
+        return "{}{}Group".format(
+                    self.stack.get_stack_name(),
+                    self.name
+                    )
     def add_to_template(self, template):
 
         t = template
@@ -46,17 +55,39 @@ class App(object):
         group.AutoScalingGroups = []
         group.Ec2TagFilters = []
 
-        if isinstance(self.target, (ec2.EC2Stack)):
-            ec2_tag = t.add_parameter(Parameter(
-                self.target.output_tag_name(),
-                Type='String'
+        for target in self.targets:
+
+            if isinstance(target, (ec2.EC2Stack)):
+                ec2_tag = t.add_parameter(Parameter(
+                    target.output_tag_name(),
+                    Type='String'
+                    ))
+
+                group.Ec2TagFilters.append(cdeploy.Ec2TagFilters(
+                    Key='Name',
+                    Value=Ref(ec2_tag),
+                    Type='KEY_AND_VALUE'
                 ))
 
-            group.Ec2TagFilters.append(cdeploy.Ec2TagFilters(
-                Key='Name',
-                Value=Ref(ec2_tag),
-                Type='KEY_AND_VALUE'
-            ))
+            if isinstance(target, (asg.ASGStack)):
+
+                asg_param = t.add_parameter(Parameter(
+                    target.output_asg(),
+                    Type='String'
+                    ))
+
+                group.AutoScalingGroups.append(Ref(asg_param))
+
+        t.add_output([
+            Output(
+                '{}Group'.format(self.name),
+                Value=Ref(group)
+            ),
+            Output(
+                '{}App'.format(self.name),
+                Value=Ref(app)
+            )
+        ])
 
 
 class CodeDeployStack(BaseStack):

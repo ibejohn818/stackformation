@@ -22,6 +22,7 @@ class ELBStack(BaseStack):
         self.vpc = vpc
         self.listeners = []
         self.crosszone = True
+        self.security_groups = []
 
     def get_scheme(self):
         """
@@ -31,6 +32,9 @@ class ELBStack(BaseStack):
             return "internet-facing"
         else:
             return "internal"
+
+    def add_security_group(self, group):
+        self.security_groups.append(group)
 
     def add_listener(self, proto, port_in, port_out, **kwargs):
         l = elb.Listener(
@@ -51,11 +55,21 @@ class ELBStack(BaseStack):
         if len(self.listeners) <= 0:
             self.add_listener("HTTP", 80, 80)
 
+        security_groups = [
+            Ref(t.add_parameter(Parameter(
+                group.output_security_group(),
+                Type='String'
+            )))
+            for group in self.security_groups
+        ]
+
+
         lb = t.add_resource(elb.LoadBalancer(
             '{}ELB'.format(self.stack_name),
             Scheme=self.get_scheme(),
             Listeners=self.listeners,
             CrossZone=self.crosszone,
+            SecurityGroups=security_groups,
             HealthCheck=elb.HealthCheck(
                 Target=Join("", ["HTTP:", '80', "/"]),
                 HealthyThreshold="3",

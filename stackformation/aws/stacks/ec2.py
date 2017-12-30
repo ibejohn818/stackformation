@@ -219,7 +219,7 @@ class EC2Stack(BaseStack):
                 Value=Ref(instance)
             ),
             Output(
-                "{}TagName".format(self.name),
+                "{}TagName".format(self.stack_name),
                 Value=Ref(tag_name)
             )
         ])
@@ -234,4 +234,4 @@ class EC2Stack(BaseStack):
     def output_tag_name(self):
         return "{}{}TagName".format(
                 self.get_stack_name(),
-                self.name)
+                self.stack_name)

@@ -45,6 +45,12 @@ class ASGStack(BaseStack):
     def add_user_data(self, ud):
         self.add_template_component(ud)
 
+    def output_asg(self):
+        return "{}{}ASG".format(
+                self.get_stack_name(),
+                self.stack_name
+            )
+
     def build_template(self):
 
         t = self._init_template()
@@ -160,6 +166,15 @@ class ASGStack(BaseStack):
                     for i  in sn_list
                 ]
 
+        elb_list = [
+            Ref(t.add_parameter(Parameter(
+                elb.output_elb(),
+                Type='String'
+            )))
+            for elb in self.elb_stacks
+        ]
+
+
         lconfig = t.add_resource(autoscaling.LaunchConfiguration(
             '{}LaunchConfiguration'.format(self.name),
             AssociatePublicIpAddress=True,
@@ -209,6 +224,7 @@ class ASGStack(BaseStack):
             VPCZoneIdentifier=sn_list,
             HealthCheckType='EC2',
             TerminationPolicies=[Ref(term_policies)],
+            LoadBalancerNames=elb_list,
             UpdatePolicy=UpdatePolicy(
                 AutoScalingRollingUpdate=AutoScalingRollingUpdate(
                     PauseTime=self.pause_time,
@@ -218,6 +234,13 @@ class ASGStack(BaseStack):
                 )
             )
            ))
+
+        t.add_output([
+            Output(
+                '{}ASG'.format(self.stack_name),
+                Value=Ref(asg)
+            )
+        ])
 
 
         return t
