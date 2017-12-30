@@ -49,6 +49,13 @@ def stacks():
 def images():
     pass
 
+@main.command()
+def test():
+
+
+    mod = load_infra_module()
+
+    print(mod.Ami.ANSIBLE_DIR)
 
 @images.command(help="", name='list')
 def list_images():
@@ -373,6 +380,18 @@ def jinja_env():
 
     return env
 
+
+def load_infra_module():
+
+    try:
+
+        module = imp.load_source('deploy', INFRA_FILE)
+
+    except Exception as e:
+        click.echo("Infra file ({}) not found!".format(INFRA_FILE))
+        exit(1)
+
+    return module
 
 def load_infra_file():
 

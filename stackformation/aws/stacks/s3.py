@@ -19,6 +19,9 @@ class BaseS3Bucket(object):
         self.public_read = False
         self.stack = None
 
+    def set_public_read(self, val):
+        self.public_read = val
+
     def output_bucket_name(self):
         return "{}{}BucketName".format(
             self.stack.get_stack_name(),
