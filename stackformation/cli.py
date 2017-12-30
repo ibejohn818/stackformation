@@ -30,12 +30,12 @@ if you wish for this to be the current build in-scope
 
 
 @click.group()
-@click.option("--infrafile", default=None)
-def main(infrafile=None):
+@click.option("--file-override", default=None)
+def main(file_override=None):
 
-    if infrafile is not None:
+    if file_override is not None:
         global INFRA_FILE
-        INFRA_FILE = infrafile
+        INFRA_FILE = file_override
 
     configure_logging()
     load_configuration()
@@ -106,9 +106,9 @@ def generate_image(name):
 
 
 @images.command(help=HELP['images_build'], name='build')
-@click.argument("name", required=True)
+@click.argument("name", default="")
 @click.option('--active','-a', is_flag=True, default=False, help='Make image active')
-def build_image(name, active):
+def build_image(name=None, active=False):
 
     infra = load_infra_file()
 
@@ -117,9 +117,18 @@ def build_image(name, active):
     results = []
 
     for image in images:
-        if image.name.startswith(name):
-            click.echo("Matched: {}".format(image.name))
+        if not name:
             results.append(image)
+        elif image.name.startswith(name):
+            results.append(image)
+
+    for r in results:
+        click.echo("Matched: {}".format(r.name))
+
+    if len(results) <= 0:
+        click.echo("No images")
+        exit(0)
+
     if active:
         click.echo("Images will be made active")
 
