@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import (BaseStack, SoloStack)
 import troposphere.cloudwatch as alarm
-from troposphere import (
+from troposphere import ( # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
