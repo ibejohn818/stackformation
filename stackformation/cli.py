@@ -12,6 +12,7 @@ import jinja2
 from colorama import Fore, Style, Back
 import re
 from pprint import pprint
+import jmespath
 
 INFRA_FILE = "infra.py"
 
@@ -147,17 +148,59 @@ def images_activate(name, id):
 
     images = infra.list_images()
 
-    results = []
+    results = False
 
     for image in images:
         if name == image.name:
             result = image
+
+    if not result:
+        click.echo("No image matching the given name")
+        exit(1)
 
     click.confirm("Make {} the active AMI for {}".format(id, result.name), abort=True)
 
     result.promote_ami(id)
 
     click.echo("{} Now active".format(id))
+
+
+@images.command(help="", name='prune')
+@click.argument("name", required=True)
+@click.option('--force', is_flag=True, default=False, help="Force deletion of active AMI")
+def images_prune(name, force):
+
+    infra = load_infra_file()
+
+    images = infra.list_images()
+
+    results = False
+
+    for image in images:
+        if name == image.name:
+            result = image
+
+    if not result:
+        click.echo("No image matching the given name")
+        exit(1)
+
+    click.confirm("Prune all in-active images for {}".format(result.name), abort=True)
+
+    amis = result.query_amis()
+
+    if len(amis) <= 0:
+        click.echo("No images available")
+        exit(0)
+
+    to_delete = []
+
+    for ami in amis:
+        if not force:
+            chk = jmespath.search("Tags[?Key=='ACTIVE']", ami)
+            if len(chk) > 0:
+                continue
+        click.echo("Deleting: {}".format(ami['ImageId']))
+        result.delete(ami['ImageId'])
 
 
 @stacks.command(name='list')

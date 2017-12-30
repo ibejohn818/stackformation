@@ -29,10 +29,12 @@ class ASGStack(BaseStack):
         self.keyname = None
 
     def set_ami(self, ami):
-        if isinstance(ami, (Ami)):
-            self.ami = ami.get_ami()
-        else:
-            self.ami = ami
+        self.ami = ami
+
+    def get_ami(self):
+        if isinstance(self.ami, (Ami)):
+            return self.ami.get_ami()
+        return self.ami
 
     def add_elb(self, elb_stack):
         self.elb_stacks.append(elb_stack)
@@ -174,7 +176,7 @@ class ASGStack(BaseStack):
             ],
             InstanceType=Ref(inst_type),
             SecurityGroups=sec_groups,
-            ImageId=self.ami,
+            ImageId=self.get_ami(),
             UserData=Base64(Join('', [
                 "#!/bin/bash\n",
                 "exec > >(tee /var/log/user-data.log|logger ",
