@@ -37,7 +37,6 @@ def main(file_override=None):
         INFRA_FILE = file_override
 
     configure_logging()
-    load_configuration()
 
 
 @main.group()
@@ -218,10 +217,14 @@ def images_prune(name, force):
 
 @stacks.command(name='list')
 @click.argument('selector', nargs=-1)
-def list_stack(selector=None):
+@click.option("--dependencies","-d", is_flag=True, default=False)
+@click.option("--remote","-r", is_flag=True, default=False)
+def list_stack(selector=None, dependencies=False, remote=False):
 
     if len(selector) <= 0:
         selector = None
+    else:
+        selector = list(selector)
 
     infra = load_infra_file()
 
@@ -236,21 +239,38 @@ def list_stack(selector=None):
     stacks = results
 
     for stack in stacks:
-        click.echo("{}Stack:{} {} {}[{}]{}".format(
-            Style.BRIGHT,
-            Style.RESET_ALL + Fore.GREEN,
+
+        ty = str(type(stack)).split(" ")[1].strip(">")
+
+        rem = ""
+        if remote:
+            if stack.stack_info():
+                rem = styled_bool(True)
+            else:
+                rem = styled_bool(False)
+
+        click.echo("{}{} {} {}[{}] {}({}){}".format(
+            rem,
+            Style.BRIGHT+Fore.CYAN,
             stack.get_stack_name(),
             Fore.YELLOW,
             stack.get_remote_stack_name(),
+            Style.RESET_ALL,
+            ty,
             Style.RESET_ALL
         ))
-        click.echo("{}Type: {}{}{}".format(
-            Style.BRIGHT,
-            Style.RESET_ALL + Fore.CYAN,
-            stack.__class__,
-            Style.RESET_ALL
-        ))
-
+        if dependencies:
+            deps = infra.get_dependent_stacks(stack)
+            if len(deps) > 0:
+                for k, v in deps.items():
+                    rem = "-"
+                    if remote:
+                        if v.stack_info():
+                            rem = styled_bool(True)
+                        else:
+                            rem = styled_bool(False)
+                    ty = str(type(v)).split(" ")[1].strip(">")
+                    click.echo("  {} {} ({})".format(rem, v.get_stack_name(), ty))
 
 @stacks.command(help='Deploy stacks')
 @click.argument('selector', nargs=-1)
@@ -332,43 +352,13 @@ def template(selector, yaml):
             print(t.to_json())
 
 
-@stacks.command(help="List stack dependencies")
-def dependencies():
-
-    infra = load_infra_file()
-
-    stacks = infra.list_stacks()
-
-    env = jinja_env()
-
-    results = []
-
-    for stack in stacks:
-
-        deps = infra.get_dependent_stacks(stack)
-
-        result = {
-            'Stack': (stack.get_stack_name(), str(stack).split(' ')[0][1:]),
-            'Dependencies': [(k, str(v).split(' ')[0][1:]) for k, v in deps.items()] # noqa
-        }
-        results.append(result)
-
-    t = env.get_template("stack-dependencies.j2")
-    context = {
-        'results': results
-    }
-    view = t.render(context)
-    click.echo(view)
-
-
-def load_configuration():
-
-    HOME = os.environ['HOME']
-
-    if HOME is None:
-        raise Exception(
-            "$HOME environment variable needs to be set to save configuration")
-
+def styled_bool(val):
+    chk = "✔"
+    ex = "✗"
+    if val:
+        return "{}{}{}".format(Fore.GREEN, chk, Style.RESET_ALL)
+    else:
+        return "{}{}{}".format(Fore.RED, ex, Style.RESET_ALL)
 
 def jinja_env():
 

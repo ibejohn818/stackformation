@@ -178,7 +178,7 @@ class Infra(object):
     def list_stacks(self, **kwargs):
 
         defaults = {
-            'reverse': False
+            'reverse': False,
         }
 
         defaults.update(kwargs)

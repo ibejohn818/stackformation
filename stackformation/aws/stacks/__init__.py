@@ -7,7 +7,7 @@ import time
 import troposphere
 import inflection
 import botocore
-from colorama import Fore, Style, Back # noqa
+from colorama import Fore, Style, Back  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class BaseStack(StackComponent):
         _deploy_event (dict): stub to store previous event during deploying() lookups
         template_components (dict): template components added to stack instance
 
-    """ # noqa
+    """  # noqa
 
     def __init__(self, name, weight=100, **kwargs):
 
@@ -81,6 +81,7 @@ class BaseStack(StackComponent):
 
         defaults.update(kwargs)
         self.template_components = {}
+        self._stack_info = None
 
     def _init_template(self, temp=None):
 
@@ -238,7 +239,7 @@ class BaseStack(StackComponent):
 
         template = self.build_template()
         parameters = self.get_parameters()
-        template_vars = self.render_template_components(env[0], context) # noqa
+        template_vars = self.render_template_components(env[0], context)  # noqa
 
         self.before_deploy(context, parameters)
 
@@ -260,7 +261,7 @@ class BaseStack(StackComponent):
                 logger.info('CREATING STACK: {}'.format(self.get_stack_name()))
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']
-            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])): # noqa
+            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):  # noqa
                 return False
             else:
                 raise e
@@ -299,7 +300,7 @@ class BaseStack(StackComponent):
             logger.info('DESTROYING STACK: {}'.format(self.get_stack_name()))
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']
-            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])): # noqa
+            if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):  # noqa
                 return False
             else:
                 raise e
@@ -327,7 +328,7 @@ class BaseStack(StackComponent):
                 logger.warn(e)
                 return
 
-        name = self._deploy_event['stack_name'] # noqa
+        name = self._deploy_event['stack_name']  # noqa
         ts = self._deploy_event['ts']
         stack_id = self._deploy_event['stack_id']
         token = self._deploy_event['token']
@@ -417,13 +418,35 @@ class BaseStack(StackComponent):
 
     def review(self, infra):
 
+        info = self.stack_info()
+
+        if not info:
+            return False
+
+        review = {}
+
         # get stack dependencies
-        deps = infra.get_dependent_stacks(self) # noqa
+        deps = infra.get_dependent_stacks(self)  # noqa
 
-        cf = self.infra.boto_session.client('cloudformation')
+        return review
 
-        info = cf.describe_stacks(StackName=self.get_remote_stack_name())
-        print(info['Stacks'][0]['Parameters'])
+
+    def stack_info(self, force_update=False, return_exception=False):
+
+        if self._stack_info is None or force_update:
+            cf = self.infra.boto_session.client('cloudformation')
+
+            try:
+
+                info = cf.describe_stacks(StackName=self.get_remote_stack_name())
+                self._stack_info = info['Stacks'][0]
+            except botocore.exceptions.ClientError as e:
+                if return_exception:
+                    return e
+                self._stack_info = False
+
+
+        return self._stack_info
 
     def build_template(self):
         raise NotImplementedError("Must implement method to extend Stack")
