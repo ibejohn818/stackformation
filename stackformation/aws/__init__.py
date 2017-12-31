@@ -322,9 +322,16 @@ class Ami(PackerImage):
         if Ami.ANSIBLE_DIR:
             ansible['playbook_dir'] = Ami.ANSIBLE_DIR
 
+        if Ami.ANSIBLE_ROLES:
+            if not isinstance(Ami.ANSIBLE_ROLES, (list)):
+                Ami.ANSIBLE_ROLES = [Ami.ANSIBLE_ROLES]
+            ansible['role_paths'] = Ami.ANSIBLE_ROLES
+
+
         self.add_builder(aws_builder)
         self.add_provisioner(shell)
         self.add_provisioner(ansible)
+
         return super(Ami, self).generate()
 
     def build(self, active=False):

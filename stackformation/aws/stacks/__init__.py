@@ -423,10 +423,37 @@ class BaseStack(StackComponent):
         if not info:
             return False
 
-        review = {}
+        review = {
+                'dependent_stacks': []
+                }
+
 
         # get stack dependencies
         deps = infra.get_dependent_stacks(self)  # noqa
+
+        for k, v in deps.items():
+            info = v.stack_info()
+            v.load_stack_outputs(self.infra)
+            outputs = v.get_outputs()
+            review['dependent_stacks'].append({
+                'stack': v,
+                'outputs': outputs,
+                'stack_info': info
+            })
+
+        context = self.infra.context
+
+        env = utils.jinja_env(context)
+
+        template = self.build_template()
+        parameters = self.get_parameters()
+        template_vars = self.render_template_components(env[0], context)  # noqa
+
+        self.before_deploy(context, parameters)
+
+        parameters = self.fill_params(parameters, context)
+
+
 
         return review
 
@@ -444,7 +471,6 @@ class BaseStack(StackComponent):
                 if return_exception:
                     return e
                 self._stack_info = False
-
 
         return self._stack_info
 
