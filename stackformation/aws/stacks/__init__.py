@@ -1,4 +1,5 @@
 import logging
+import stackformation
 import stackformation.utils as utils
 import re
 import datetime
@@ -83,12 +84,13 @@ class BaseStack(StackComponent):
         self.template_components = {}
         self._stack_info = None
 
-    def _init_template(self, temp=None):
+    def _init_template(self):
 
-        if temp is None:
-            temp = troposphere.Template(
-                "{0} Template".format(
-                    self.name))
+        temp = troposphere.Template(
+            "{} Template. Stackformation Version: {}".format(
+                self.name,
+                stackformation.__version__
+                ))
         return temp
 
     def add_template_component(self, var, component):
