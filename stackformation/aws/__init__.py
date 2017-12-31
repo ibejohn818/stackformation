@@ -274,7 +274,7 @@ class Ami(PackerImage):
             if len(ami['Images']) <= 0:
                 return
                 print(
-                    "No active images have been created. Build an image and make --active") # noqa
+                    "No active images have been created. Build an image and make --active")  # noqa
 
             self._ami = ami['Images'][0]['ImageId']
 
