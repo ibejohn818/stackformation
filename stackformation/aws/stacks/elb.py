@@ -61,6 +61,34 @@ class ELBStack(BaseStack):
             for group in self.security_groups
         ]
 
+        health_check_unhealthy_threshold = t.add_parameter(Parameter(
+            'Input{}HealthUnhealthyThreshold'.format(self.stack_name),
+            Type='String',
+            Default='3',
+            Description='{} ELB HealthCheck Unhealthy Threshold'.format(self.stack_name)
+        ))
+
+        health_check_healthy_threshold = t.add_parameter(Parameter(
+            'Input{}HealthHealthyThreshold'.format(self.stack_name),
+            Type='String',
+            Default='3',
+            Description='{} ELB HealthCheck Healthy Threshold'.format(self.stack_name)
+        ))
+
+        health_check_interval = t.add_parameter(Parameter(
+            'Input{}HealthInterval'.format(self.stack_name),
+            Type='String',
+            Default='30',
+            Description='{} ELB HealthCheck Interval'.format(self.stack_name)
+        ))
+
+        health_check_uri = t.add_parameter(Parameter(
+            'Input{}HealthURI'.format(self.stack_name),
+            Type='String',
+            Default='/',
+            Description='{} ELB HealthCheck URI'.format(self.stack_name)
+        ))
+
         lb = t.add_resource(elb.LoadBalancer(
             '{}ELB'.format(self.stack_name),
             Scheme=self.get_scheme(),
@@ -68,10 +96,10 @@ class ELBStack(BaseStack):
             CrossZone=self.crosszone,
             SecurityGroups=security_groups,
             HealthCheck=elb.HealthCheck(
-                Target=Join("", ["HTTP:", '80', "/"]),
-                HealthyThreshold="3",
-                UnhealthyThreshold="5",
-                Interval="30",
+                Target=Join("", ["HTTP:", '80', Ref(health_check_uri)]),
+                HealthyThreshold=Ref(health_check_healthy_threshold),
+                UnhealthyThreshold=Ref(health_check_unhealthy_threshold),
+                Interval=Ref(health_check_interval),
                 Timeout="5",
             )
         ))

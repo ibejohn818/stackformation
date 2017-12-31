@@ -6,6 +6,7 @@ from troposphere import ( # noqa
     Select, Tags, Template,
     GetAZs, Export
 )
+from collections import namedtuple
 
 
 class Alarm(object):
@@ -18,6 +19,71 @@ class Alarm(object):
     def _build_alarm(self, template, topics):
         raise Exception("Must implement _build_alarm")
 
+
+class CustomAlarm(Alarm):
+
+    def __init__(self, name):
+
+        super(CustomAlarm, self).__init__(name)
+
+        self.params = namedtuple('params', ['stat', 'period', 'evals', 'missing'])
+        self.alarm = namedtuple('alarm', ['namespace', 'metric'])
+        self.description = description
+
+    def _generate(self, template, topics):
+        pass
+
+
+class ELBAlarm(Alarm):
+    pass
+
+
+class ELBHealthyHostsAlarm(ELBAlarm):
+
+    def __init__(self, elb_stack):
+
+        self.elb_stack = elb_stack
+        name = '{}ELBHealthyHostsAlarm'.format(elb_stack.stack_name)
+        super(ELBHealthyHostsAlarm, self).__init__(name)
+
+
+    def _build_alarm(self, template, topics):
+
+        t = template
+
+        elb_name = self.elb_stack.stack_name
+
+        elb_output = self.elb_stack.output_elb()
+
+        if elb_output in t.parameters:
+            elb_ref = Ref(t.parameters[elb_output])
+        else:
+            elb_ref = Ref(t.add_parameter(Parameter(
+                elb_output,
+                Type='String'
+            )))
+
+        a = t.add_resource(alarm.Alarm(
+            '{}HealthHosts'.format(elb_name),
+            AlarmDescription='{} Health Hosts'.format(elb_name),
+            MetricName='HealthyHostCount',
+            Namespace='AWS/ELB',
+            Statistic='Average',
+            Period=str(60),
+            Dimensions=[
+                alarm.MetricDimension(
+                    Name='LoadBalancerName',
+                    Value=elb_ref
+                )
+            ],
+            EvaluationPeriods=str(3),
+            Threshold=str(2),
+            ComparisonOperator='LessThanThreshold',
+            AlarmActions=topics,
+            InsufficientDataActions=[],
+            OKActions=topics,
+            TreatMissingData='missing'
+        ))
 
 class EC2CpuBaseAlarm(Alarm):
 
