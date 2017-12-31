@@ -53,7 +53,7 @@ node {
                     sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} twine upload dist/${dist_name} -u ${env.PYPIUSER} -p ${env.PYPIPASSWD}"
                 }
 
-                sh "curl -o /dev/null https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/ff4e85fb-29fd-4ef9-a37e-33e518e4f954/"
+                sh "curl -o /dev/null -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/ff4e85fb-29fd-4ef9-a37e-33e518e4f954/"
 
             }
         }
