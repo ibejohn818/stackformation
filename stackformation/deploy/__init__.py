@@ -79,7 +79,7 @@ class SerialDeploy(Deploy):
             for k, stk in dependent_stacks.items():
                 stk.load_stack_outputs(stack.infra)
 
-            # start = stack.start_deploy(infra, stack.infra.context)
+            start = stack.start_deploy(infra, stack.infra.context)
             time.sleep(2)
 
             while stack.deploying(infra):

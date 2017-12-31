@@ -83,12 +83,12 @@ class ASGStack(BaseStack):
             Description='{} Instance Type'.format(self.stack_name)
         ))
 
-        # inst_tag_name = t.add_parameter(Parameter(
-        # 'Input{}ASGTagName'.format(self.stack_name),
-        # Type='String',
-        # Default='{}ASG'.format(self.name),
-        # Description='{} Instance Type'.format(self.stack_name)
-        # ))
+        inst_tag_name = t.add_parameter(Parameter(
+            'Input{}ASGTagName'.format(self.stack_name),
+            Type='String',
+            Default='{}ASG'.format(self.name),
+            Description='{} Instance Type'.format(self.stack_name)
+        ))
 
         # termination policies
         term_policies = t.add_parameter(Parameter(
@@ -152,8 +152,10 @@ class ASGStack(BaseStack):
         # subnet list
         if self.private_subnet:
             sn_list = [i for i in self.vpc_stack.output_private_subnets()]
+            associate_public_ip = False
         else:
             sn_list = [i for i in self.vpc_stack.output_public_subnets()]
+            associate_public_ip = True
 
         sn_list = [
             Ref(t.add_parameter(Parameter(
@@ -173,7 +175,7 @@ class ASGStack(BaseStack):
 
         lconfig = t.add_resource(autoscaling.LaunchConfiguration(
             '{}LaunchConfiguration'.format(self.name),
-            AssociatePublicIpAddress=True,
+            AssociatePublicIpAddress=associate_public_ip,
             IamInstanceProfile=Ref(instance_profile_param),
             BlockDeviceMappings=[
                 ec2.BlockDeviceMapping(
@@ -221,6 +223,7 @@ class ASGStack(BaseStack):
             HealthCheckType='EC2',
             TerminationPolicies=[Ref(term_policies)],
             LoadBalancerNames=elb_list,
+            Tags=autoscaling.Tags(Name=Ref(inst_tag_name)),
             UpdatePolicy=UpdatePolicy(
                 AutoScalingRollingUpdate=AutoScalingRollingUpdate(
                     PauseTime=self.pause_time,

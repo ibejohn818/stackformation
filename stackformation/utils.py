@@ -1,5 +1,7 @@
 import jinja2
 import re
+import imp
+import os
 
 
 def jinja_env(context, capture_vars=False):
@@ -82,3 +84,26 @@ def ucfirst(word):
     ls = list(word)
     ls[0] = ls[0].upper()
     return ''.join(ls)
+
+
+def load_infra_module(infra_file):
+
+    try:
+
+        module = imp.load_source('deploy', infra_file)
+
+    except Exception as e:
+        click.echo("Infra file ({}) not found!".format(infra_file))
+        exit(1)
+
+    return module
+
+def template_env(path):
+
+    path = os.path.dirname(os.path.realpath(__file__))
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(
+            searchpath=path))
+
+    return env
