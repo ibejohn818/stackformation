@@ -11,6 +11,7 @@ from stackformation.utils import (match_stack)
 import jinja2
 from colorama import Fore, Style
 import jmespath
+from stackformation import utils
 
 INFRA_FILE = "infra.py"
 
@@ -59,7 +60,7 @@ def test():
 @images.command(help="", name='list')
 def list_images():
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     images = infra.list_images()
 
@@ -89,6 +90,7 @@ def list_images():
                     if t['Key'] == 'ACTIVE':
                         flag = "(ACTIVE)"
                         flag_style = Fore.GREEN
+
 
                 click.echo(
                     "  Date: {} {}AMI: {}{}{}".format(
@@ -121,7 +123,7 @@ def list_images():
     help='Make image active')
 def build_image(name=None, active=False):
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     images = infra.list_images()
 
@@ -154,7 +156,7 @@ def build_image(name=None, active=False):
 @click.option('--id', required=True)
 def images_activate(name, id):
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     images = infra.list_images()
 
@@ -183,7 +185,7 @@ def images_activate(name, id):
               help="Force deletion of active AMI")
 def images_prune(name, force):
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     images = infra.list_images()
 
@@ -226,7 +228,7 @@ def list_stack(selector=None, dependencies=False, remote=False):
     else:
         selector = list(selector)
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     stacks = infra.list_stacks()
 
@@ -240,8 +242,8 @@ def list_stack(selector=None, dependencies=False, remote=False):
 
     for stack in stacks:
 
-        ty = str(type(stack)).split(" ")[1].strip(">")
-
+        # ty = str(type(v)).split(" ")[1].strip(">")
+        ty = type(stack).__name__
         rem = ""
         if remote:
             if stack.stack_info():
@@ -269,7 +271,7 @@ def list_stack(selector=None, dependencies=False, remote=False):
                             rem = styled_bool(True)
                         else:
                             rem = styled_bool(False)
-                    ty = str(type(v)).split(" ")[1].strip(">")
+                    ty = type(v).__name__
                     click.echo("  {} {} ({})".format(rem, v.get_stack_name(), ty))
 
 @stacks.command(help='Deploy stacks')
@@ -279,7 +281,7 @@ def review(selector=None):
     if len(selector) <= 0:
         selector = None
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     stacks = infra.list_stacks()
 
@@ -299,7 +301,7 @@ def deploy(selector):
 
     selector = list(selector)
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     deploy = dep.SerialDeploy()
 
@@ -315,7 +317,7 @@ def destroy(selector):
 
     selector = list(selector)
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     deploy = dep.SerialDeploy()
 
@@ -332,7 +334,7 @@ def template(selector, yaml):
 
     selector = list(selector)
 
-    infra = load_infra_file()
+    infra = utils.load_infra_module(INFRA_FILE).infra
 
     stacks = infra.list_stacks()
 
@@ -370,31 +372,6 @@ def jinja_env():
 
     return env
 
-
-def load_infra_module():
-
-    try:
-
-        module = imp.load_source('deploy', INFRA_FILE)
-
-    except Exception as e:
-        click.echo("Infra file ({}) not found!".format(INFRA_FILE))
-        exit(1)
-
-    return module
-
-def load_infra_file():
-
-    try:
-
-        module = imp.load_source('deploy', INFRA_FILE)
-        infra = module.infra
-
-    except Exception as e:
-        click.echo("Infra file ({}) not found!".format(INFRA_FILE))
-        exit(1)
-
-    return infra
 
 
 def configure_logging():
