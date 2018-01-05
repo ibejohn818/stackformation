@@ -2,35 +2,49 @@
 
 """Console script for stackformation."""
 
-import click
-import imp
+import stackformation
 import stackformation.deploy as dep
+from stackformation.utils import (match_stack, match_image)
+from stackformation import utils
+import click
 import logging
 import os
-from stackformation.utils import (match_stack, match_image)
 import jinja2
 from colorama import Fore, Style
 import jmespath
-from stackformation import utils
 
 INFRA_FILE = "infra.py"
 
 HELP = {
+    'image_ansible_config': """
+    echo the configured ansible dir for the Ami class
+""",
+    'main': """
+    Stackformation {}
 
+    CloudFormation framework to enforce infrastructure-as-code paradigm
+""".format(stackformation.__version__),
+'main_file_override': """(Default: infra.py) Override the infrastructure configuration file
+""",
     'images_build': """
 Select the image to build from your configured images in your {0} file.
 If this is the first image being built it will automatically be made active.
 If there are more than one builds present, make sure to mark the image --active/-a
 if you wish for this to be the current build in-scope
-""".format(INFRA_FILE) # noqa
-
+""".format(INFRA_FILE)  # noqa
 
 
 }
+context_settings = {
+    'help_option_names': ['-h', '--help']
+}
 
 
-@click.group()
-@click.option("--file-override", default=None)
+@click.group(help=HELP['main'], context_settings=context_settings)
+@click.option(
+    "--file-override",
+    default='infra.py',
+    help=HELP['main_file_override'])
 def main(file_override=None):
 
     if file_override is not None:
@@ -49,13 +63,6 @@ def stacks():
 def images():
     pass
 
-@main.command()
-def test():
-
-
-    mod = load_infra_module()
-
-    print(mod.Ami.ANSIBLE_DIR)
 
 @images.command(help="List images", name='list')
 def list_images():
@@ -91,7 +98,6 @@ def list_images():
                         flag = "(ACTIVE)"
                         flag_style = Fore.GREEN
 
-
                 click.echo(
                     "  Date: {} {}AMI: {}{}{}".format(
                         ami['CreationDate'],
@@ -101,16 +107,15 @@ def list_images():
                         Style.RESET_ALL))
 
 
-# @images.command(help="", name='generate')
-# @click.argument("name", required=True)
-# def generate_image(name):
+@images.command(help=HELP['image_ansible_config'], name='ansible-config')
+@click.option("--ansible-roles", is_flag=True, default=False)
+def ansible_config(ansible_roles):
 
-    # infra = load_infra_file()
+    mod = utils.load_infra_module(INFRA_FILE)
 
-    # images = infra.list_images()
+    dir_name = mod.Ami.ANSIBLE_DIR
 
-    # for image in images:
-    # if image.name.startswith(name):
+    click.echo(dir_name)
 
 
 @images.command(help=HELP['images_build'], name='build')
@@ -219,8 +224,8 @@ def images_prune(name, force):
 
 @stacks.command(name='list')
 @click.argument('selector', nargs=-1)
-@click.option("--dependencies","-d", is_flag=True, default=False)
-@click.option("--remote","-r", is_flag=True, default=False)
+@click.option("--dependencies", "-d", is_flag=True, default=False)
+@click.option("--remote", "-r", is_flag=True, default=False)
 def list_stack(selector=None, dependencies=False, remote=False):
 
     if len(selector) <= 0:
@@ -253,7 +258,7 @@ def list_stack(selector=None, dependencies=False, remote=False):
 
         click.echo("{}{} {} {}[{}] {}({}){}".format(
             rem,
-            Style.BRIGHT+Fore.CYAN,
+            Style.BRIGHT + Fore.CYAN,
             stack.get_stack_name(),
             Fore.YELLOW,
             stack.get_remote_stack_name(),
@@ -272,7 +277,10 @@ def list_stack(selector=None, dependencies=False, remote=False):
                         else:
                             rem = styled_bool(False)
                     ty = type(v).__name__
-                    click.echo("  {} {} ({})".format(rem, v.get_stack_name(), ty))
+                    click.echo(
+                        "  {} {} ({})".format(
+                            rem, v.get_stack_name(), ty))
+
 
 @stacks.command(help='Deploy stacks')
 @click.argument('selector', nargs=-1)
@@ -362,6 +370,7 @@ def styled_bool(val):
     else:
         return "{}{}{}".format(Fore.RED, ex, Style.RESET_ALL)
 
+
 def jinja_env():
 
     path = os.path.dirname(os.path.realpath(__file__))
@@ -371,7 +380,6 @@ def jinja_env():
             searchpath="{}/templates/".format(path)))
 
     return env
-
 
 
 def configure_logging():

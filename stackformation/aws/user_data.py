@@ -81,5 +81,4 @@ fi
 mkdir -p {1}
 echo '{{{{context('Input{0}EBSDeviceName')}}}} {1} ext4 defaults,nofail 0 2' >> /etc/fstab
 mount -a
-        """.format(self.ebs_volume.name, self.path) # noqa
-
+        """.format(self.ebs_volume.name, self.path)  # noqa

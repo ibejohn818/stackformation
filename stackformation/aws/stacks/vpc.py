@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import BaseStack, SoloStack
 from troposphere import ec2
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -271,9 +271,9 @@ class VPCStack(BaseStack, SoloStack):
             "VPC",
             CidrBlock="{}.0.0/16".format(self.base_cidr),
             EnableDnsSupport="true" if self.enable_dns else "false",
-            EnableDnsHostnames="true" if self.enable_dns_hostnames else "false", # noqa
+            EnableDnsHostnames="true" if self.enable_dns_hostnames else "false",  # noqa
             Tags=Tags(
-                Name=inflection.humanize(inflection.underscore(self.get_stack_name())) # noqa
+                Name=inflection.humanize(inflection.underscore(self.get_stack_name()))  # noqa
             )
         ))
 
