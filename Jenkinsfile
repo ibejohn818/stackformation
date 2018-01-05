@@ -37,6 +37,14 @@ node {
             }
         }
 
+        if (env.BRANCH_NAME == "master") {
+            stage("Trigger Docker Latest Build") {
+                withCredentials([string(credentialsId: 'StackformationDockerHubBuildToken', variable: 'BUILD_TOKEN')]) {
+                    sh "curl -H 'Content-Type: application/json' --data '{\"docker_tag\": \"master\"}' -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/${env.BUILD_TOKEN}/"
+                }
+            }
+        }
+
         if (env.TAG_NAME) {
             stage("Publish To PyPi") {
 
@@ -56,7 +64,7 @@ node {
             }
             stage("Trigger Docker Hub Build") {
                 withCredentials([string(credentialsId: 'StackformationDockerHubBuildToken', variable: 'BUILD_TOKEN')]) {
-                    sh "curl -o /dev/null -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/${env.BUILD_TOKEN}/"
+                    sh "curl -H 'Content-Type: application/json' --data '{\"source_type\": \"Tag\", \"source_name\": \"${env.TAG_NAME}\"}' -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/${env.BUILD_TOKEN}/"
                 }
             }
         }
