@@ -3,6 +3,7 @@ import re
 import imp
 import os
 from troposphere import Parameter
+import click
 
 
 def jinja_env(context, capture_vars=False):
