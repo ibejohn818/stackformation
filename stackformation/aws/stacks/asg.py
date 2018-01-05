@@ -87,7 +87,7 @@ class ASGStack(BaseStack):
             'Input{}ASGTagName'.format(self.stack_name),
             Type='String',
             Default='{}ASG'.format(self.name),
-            Description='{} Instance Type'.format(self.stack_name)
+            Description='{} Instance Name Tag'.format(self.stack_name)
         ))
 
         # termination policies
@@ -219,6 +219,7 @@ class ASGStack(BaseStack):
             LaunchConfigurationName=Ref(lconfig),
             MinSize=Ref(min_inst),
             MaxSize=Ref(max_inst),
+            DesiredCapacity=Ref(des_inst),
             VPCZoneIdentifier=sn_list,
             HealthCheckType='EC2',
             TerminationPolicies=[Ref(term_policies)],
