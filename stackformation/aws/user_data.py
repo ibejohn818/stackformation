@@ -82,3 +82,43 @@ mkdir -p {1}
 echo '{{{{context('Input{0}EBSDeviceName')}}}} {1} ext4 defaults,nofail 0 2' >> /etc/fstab
 mount -a
         """.format(self.ebs_volume.name, self.path)  # noqa
+
+
+class ECSJoinCluster(UserData):
+
+    def __init__(self, name, ecs_cluster):
+
+        super(ECSJoinCluster, self).__init__(name)
+
+        self.ecs_cluster = ecs_cluster
+
+    def render(self):
+        return """
+iptables -t nat -A PREROUTING -p tcp -d 169.254.170.2 --dport 80 -j DNAT --to-destination 127.0.0.1:51679
+iptables -t nat -A OUTPUT -d 169.254.170.2 -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 51679
+
+if [ -d /etc/apt ]; then
+    sh -c "echo 'net.ipv4.conf.all.route_localnet = 1' >> /etc/sysctl.conf"
+    sysctl -p /etc/sysctl.conf
+    echo "Ubuntu/Debian Save iptables"
+    sh -c 'mkdir -p /etc/iptables'
+    sh -c 'iptables-save > /etc/iptables/rules.v4'
+fi
+
+if [ -d /etc/yum.repos.d ]; then
+    echo "Centos/RHEL Save iptables"
+    sh -c 'iptables-save > /etc/sysconfig/iptables'
+fi
+
+echo 'Write ECS Config'
+mkdir -p /etc/ecs
+cat << EOF > /etc/ecs/ecs.config
+ECS_DATADIR=/data
+ECS_ENABLE_TASK_IAM_ROLE=true
+ECS_ENABLE_TASK_IAM_ROLE_NETWORK_HOST=true
+ECS_LOGFILE=/var/log/ecs-agent.log
+ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
+ECS_LOGLEVEL=info
+ECS_CLUSTER={{{{context('{0}')}}}}
+EOF
+""".format(self.ecs_cluster.output_ecs_cluster())  # noqa

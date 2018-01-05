@@ -4,6 +4,7 @@ import imp
 import os
 from troposphere import Parameter
 import click
+from colorama import Fore, Style, Back  # noqa
 
 
 def jinja_env(context, capture_vars=False):
@@ -155,3 +156,30 @@ def template_env(path):
             searchpath=path))
 
     return env
+
+
+def color_index(index):
+
+    colors = {
+            'cf_status': {
+                'CREATE_IN_PROGRESS': Fore.YELLOW,
+                'CREATE_FAILED': Fore.RED,
+                'CREATE_COMPLETE': Fore.GREEN,
+                'ROLLBACK_IN_PROGRESS': Fore.RED,
+                'ROLLBACK_FAILED': Fore.RED,
+                'ROLLBACK_COMPLETE': Fore.RED,
+                'DELETE_IN_PROGRESS': Fore.YELLOW,
+                'DELETE_FAILED': Fore.RED,
+                'DELETE_COMPLETE': Fore.GREEN,
+                'UPDATE_FAILED': Fore.RED,
+                'UPDATE_IN_PROGRESS': Fore.YELLOW,
+                'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
+                'UPDATE_COMPLETE': Fore.GREEN,
+                'UPDATE_ROLLBACK_IN_PROGRESS': Fore.RED,
+                'UPDATE_ROLLBACK_FAILED': Fore.RED,
+                'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
+                'UPDATE_ROLLBACK_COMPLETE': Fore.GREEN,
+            }
+        } # noqa
+
+    return colors[index]

@@ -49,7 +49,7 @@ def test_ec2_stack(infra):
 
     ec2_stack.keypair("testkey")
 
-    ec2_stack.set_ami("ami-id")
+    ec2_stack.ami = "ami-id"
 
     t = ec2_stack.build_template()
 
