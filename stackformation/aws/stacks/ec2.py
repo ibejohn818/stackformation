@@ -40,7 +40,7 @@ class EC2Stack(BaseStack):
         self.security_groups = []
         self.use_key = None
         self.volumes = []
-        self.ami = None
+        self._ami = None
         self.eip = None
 
     def set_eip(self, eip):
@@ -79,13 +79,15 @@ class EC2Stack(BaseStack):
                 varname = "{}{}".format(ud_key, k)
                 context.add_vars({varname: v})
 
-    def set_ami(self, ami):
-        self.ami = ami
+    @property
+    def ami(self):
+        if isinstance(self._ami, (Ami)):
+            return self._ami.get_ami()
+        return self._ami
 
-    def get_ami(self):
-        if isinstance(self.ami, (Ami)):
-            return self.ami.get_ami()
-        return self.ami
+    @ami.setter
+    def ami(self, value):
+        self._ami = value
 
     def build_template(self):
 
@@ -204,7 +206,7 @@ class EC2Stack(BaseStack):
             Tags=Tags(
                 Name=Ref(tag_name)
             ),
-            ImageId=self.get_ami(),
+            ImageId=self.ami,
             Volumes=volumes,
             InstanceType=Ref(instance_type),
             IamInstanceProfile=Ref(instance_profile_param),

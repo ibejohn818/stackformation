@@ -25,16 +25,26 @@ class ASGStack(BaseStack):
         self.security_groups = []
         self.pause_time = 'PT5M'
         self.update_policy_instance_count = 2
-        self.ami = None,
-        self.keyname = None
+        self._ami = None,
+        self._keyname = None
 
-    def set_ami(self, ami):
-        self.ami = ami
+    @property
+    def keyname(self):
+        return self._keyname
 
-    def get_ami(self):
-        if isinstance(self.ami, (Ami)):
-            return self.ami.get_ami()
-        return self.ami
+    @keyname.setter
+    def keyname(self, keyname):
+        self._keyname = keyname
+
+    @property
+    def ami(self):
+        if isinstance(self._ami, (Ami)):
+            return self._ami.get_ami()
+        return self._ami
+
+    @ami.setter
+    def ami(self, value):
+        self._ami = value
 
     def add_elb(self, elb_stack):
         self.elb_stacks.append(elb_stack)
@@ -87,7 +97,7 @@ class ASGStack(BaseStack):
             'Input{}ASGTagName'.format(self.stack_name),
             Type='String',
             Default='{}ASG'.format(self.name),
-            Description='{} Instance Type'.format(self.stack_name)
+            Description='{} Instance Name Tag'.format(self.stack_name)
         ))
 
         # termination policies
@@ -189,7 +199,7 @@ class ASGStack(BaseStack):
             ],
             InstanceType=Ref(inst_type),
             SecurityGroups=sec_groups,
-            ImageId=self.get_ami(),
+            ImageId=self.ami,
             UserData=Base64(Join('', [
                 "#!/bin/bash\n",
                 "exec > >(tee /var/log/user-data.log|logger ",
@@ -219,6 +229,7 @@ class ASGStack(BaseStack):
             LaunchConfigurationName=Ref(lconfig),
             MinSize=Ref(min_inst),
             MaxSize=Ref(max_inst),
+            DesiredCapacity=Ref(des_inst),
             VPCZoneIdentifier=sn_list,
             HealthCheckType='EC2',
             TerminationPolicies=[Ref(term_policies)],
