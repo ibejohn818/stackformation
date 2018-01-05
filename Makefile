@@ -85,6 +85,9 @@ coverage-html: clean flake8 ## test coverage html report ( Docker )
 		$(shell pwd) stackformation:test python3 setup.py covhtml
 	$(BROWSER) htmlcov/index.html
 
+docker-build-dev: ## Build the Dockerfile-dev tagged: stackformation:dev
+	docker build -f Dockerfile-dev -t stackformation:dev .
+
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/stackformation.rst
 	rm -f docs/modules.rst

@@ -95,6 +95,15 @@ class Context(object):
         return self.vars.get(name)
 
 
+class SSMParameter(object):
+
+    def __init__(self, name, type="SecureString", kms_key = None):
+
+        self.name = name
+        self.type = type
+        self.kms_key = kms_key
+
+
 class Infra(object):
 
     def __init__(self, name, boto_session=None):
