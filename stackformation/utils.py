@@ -2,6 +2,8 @@ import jinja2
 import re
 import imp
 import os
+from troposphere import Parameter
+import click
 
 
 def jinja_env(context, capture_vars=False):
@@ -34,7 +36,7 @@ def match_stack(selector, stack):
     Returns:
         :obj:`stackformation.BaseStack`: If stack matches
         bool: False if selector did not match
-    """ # noqa
+    """  # noqa
     if not isinstance(selector, list):
         selector = selector.split(' ')
 
@@ -53,11 +55,42 @@ def match_stack(selector, stack):
             pos.append(s)
 
     for s in pos:
-        if re.search(s, sn) or re.search(s, rn):
+        if (s in sn) or (s in rn):
             result = True
 
     for s in neg:
-        if re.search(s, sn) or re.search(s, rn):
+        if (s in sn) or (s in rn):
+            result = False
+
+    return result
+
+
+def match_image(selector, image_name):
+
+    if not isinstance(selector, list):
+        selector = selector.split(' ')
+
+    selector = [i.lower() for i in selector]
+
+    pos = []
+    neg = []
+    result = False
+    im = image_name.lower()
+
+    for s in selector:
+        if s[0] == "^":
+            neg.append(s[1:])
+        else:
+            pos.append(s)
+
+    result = False
+
+    for s in pos:
+        if s in im:
+            result = True
+
+    for s in neg:
+        if s in im:
             result = False
 
     return result
@@ -86,6 +119,20 @@ def ucfirst(word):
     return ''.join(ls)
 
 
+def tparam(template, name, value, description, default=None):
+
+    p = template.add_parameter(Parameter(
+        name,
+        Type='String',
+        Description=description
+    ))
+
+    if default:
+        p.Default = default
+
+    return p
+
+
 def load_infra_module(infra_file):
 
     try:
@@ -97,6 +144,7 @@ def load_infra_module(infra_file):
         exit(1)
 
     return module
+
 
 def template_env(path):
 
