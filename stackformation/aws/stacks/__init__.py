@@ -373,7 +373,7 @@ class BaseStack(StackComponent):
 
                         # logger style
                         if e['ResourceStatus'] in status_to_color:
-                            color = status_to_color[
+                            color = utils.color_index('cf_status')[
                                 e['ResourceStatus']
                             ]
                         else:

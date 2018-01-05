@@ -329,7 +329,11 @@ def destroy(selector):
 
     deploy = dep.SerialDeploy()
 
-    if not deploy.cli_confirm(infra, selector, reverse=True):
+    if not deploy.cli_confirm(
+            infra,
+            selector,
+            ask='Are you sure you want to destroy these stack(s)?',
+            reverse=True):
         exit(0)
 
     deploy.destroy(infra, selector, reverse=True)

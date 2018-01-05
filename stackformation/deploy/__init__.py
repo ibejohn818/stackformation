@@ -17,7 +17,8 @@ class Deploy(object):
         c = 0
 
         defaults = {
-            'reverse': False
+            'reverse': False,
+            'ask': 'Deploy Stack(s)?'
         }
 
         defaults.update(kwargs)
@@ -37,7 +38,7 @@ class Deploy(object):
             print("NO STACKS SELCTED!")
             return False
 
-        ans = input("Deploy stacks?: [y/n] \n".format())
+        ans = input("{} [y/n]: \n".format(defaults['ask']))
 
         if ans.lower().startswith("y"):
             return True
