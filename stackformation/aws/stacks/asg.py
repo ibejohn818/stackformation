@@ -3,7 +3,7 @@ from stackformation.aws import Ami
 from troposphere import ec2
 from troposphere import autoscaling
 from troposphere.policies import UpdatePolicy, AutoScalingRollingUpdate
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Template, Base64,
@@ -198,9 +198,9 @@ class ASGStack(BaseStack):
                 "\n",
                 "\n",
                 "curl -L https://gist.github.com/ibejohn818",
-                "/aa2bcd6743a59f62e1baa098d6365a61/raw/",
+                "/aa2bcd6743a59f62e1baa098d6365a61/raw",
                 "/install-cfn-init.sh",
-                " -o /tmp/install-cfn-init.sh && chmod +x /tmp/install-cfn-init.sh", # noqa
+                " -o /tmp/install-cfn-init.sh && chmod +x /tmp/install-cfn-init.sh",  # noqa
                 "\n",
                 "/tmp/install-cfn-init.sh ",
                 " {}AutoScalingGroup".format(self.stack_name),

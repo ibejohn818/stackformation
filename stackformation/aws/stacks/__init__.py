@@ -90,7 +90,7 @@ class BaseStack(StackComponent):
             "{} Template. Stackformation Version: {}".format(
                 self.name,
                 stackformation.__version__
-                ))
+            ))
         return temp
 
     def add_template_component(self, var, component):
@@ -426,9 +426,8 @@ class BaseStack(StackComponent):
             return False
 
         review = {
-                'dependent_stacks': []
-                }
-
+            'dependent_stacks': []
+        }
 
         # get stack dependencies
         deps = infra.get_dependent_stacks(self)  # noqa
@@ -447,7 +446,7 @@ class BaseStack(StackComponent):
 
         env = utils.jinja_env(context)
 
-        template = self.build_template()
+        review['template'] = self.build_template()
         parameters = self.get_parameters()
         template_vars = self.render_template_components(env[0], context)  # noqa
 
@@ -455,10 +454,7 @@ class BaseStack(StackComponent):
 
         parameters = self.fill_params(parameters, context)
 
-
-
         return review
-
 
     def stack_info(self, force_update=False, return_exception=False):
 
@@ -467,7 +463,8 @@ class BaseStack(StackComponent):
 
             try:
 
-                info = cf.describe_stacks(StackName=self.get_remote_stack_name())
+                info = cf.describe_stacks(
+                    StackName=self.get_remote_stack_name())
                 self._stack_info = info['Stacks'][0]
             except botocore.exceptions.ClientError as e:
                 if return_exception:

@@ -3,7 +3,7 @@ from awacs import aws
 import awacs.sts
 import awacs.s3
 import troposphere.iam as iam
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -116,7 +116,7 @@ class CustomPolicy(IAMPolicy):
     Args:
         name (str): policy name
         statements (List[:obj:`awacs.aws.Statement`]): List of policy statement objects.
-    """ # noqa
+    """  # noqa
 
     def __init__(self, name, statements=None):
         super(CustomPolicy, self).__init__(name)
@@ -415,7 +415,7 @@ class CodeDeployPolicy(IAMPolicy):
                         Action=[
                             aws.Action('autoscaling', '*'),
                             aws.Action('elasticloadbalancing', 'DescribeLoadBalancers'),  # noqa
-                            aws.Action('elasticloadbalancing', 'DescribeInstanceHealth'), # noqa
+                            aws.Action('elasticloadbalancing', 'DescribeInstanceHealth'),  # noqa
                             aws.Action('elasticloadbalancing',
                                        'RegisterInstancesWithLoadBalancer'),
                             aws.Action('elasticloadbalancing',
@@ -577,7 +577,6 @@ class IAMStack(BaseStack):
         self.groups = []
 
     def find_role(self, clazz, name=None):
-
         return self.find_class_in_list(self.roles, clazz, name)
 
     def add_role(self, role):

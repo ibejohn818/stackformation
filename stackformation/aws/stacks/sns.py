@@ -4,7 +4,7 @@ import awacs.kms
 import awacs.sns
 import awacs.logs
 from awacs import aws
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,

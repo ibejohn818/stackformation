@@ -327,7 +327,6 @@ class Ami(PackerImage):
                 Ami.ANSIBLE_ROLES = [Ami.ANSIBLE_ROLES]
             ansible['role_paths'] = Ami.ANSIBLE_ROLES
 
-
         self.add_builder(aws_builder)
         self.add_provisioner(shell)
         self.add_provisioner(ansible)

@@ -1,7 +1,7 @@
 import time
 import logging
 from stackformation.utils import (match_stack)
-from colorama import Fore, Back, Style # noqa
+from colorama import Fore, Back, Style  # noqa
 
 
 logger = logging.getLogger(__name__)
@@ -80,6 +80,8 @@ class SerialDeploy(Deploy):
                 stk.load_stack_outputs(stack.infra)
 
             start = stack.start_deploy(infra, stack.infra.context)
+            if not start:
+                print("{} Skipping deploy..".format(stack.get_stack_name()))
             time.sleep(2)
 
             while stack.deploying(infra):
