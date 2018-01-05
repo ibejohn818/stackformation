@@ -1,13 +1,11 @@
-from stackformation import BaseStack
+from stackformation.aws.stacks import (BaseStack)
 from troposphere import rds
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
     GetAZs, Export
 )
-
-
 
 
 class RDSStack(BaseStack):
@@ -31,6 +29,8 @@ class RDSStack(BaseStack):
 
         t = self._init_template()
 
+        username = "rdsamdin"
+        passwd = "rdspasswd"
 
         instance_type = t.add_parameters(Parameter(
             "Input{}RDSInstanceType".format(self.stack_name),
@@ -56,7 +56,7 @@ class RDSStack(BaseStack):
             Default='7'
             ))
 
-        sn_list = vpc.output_private_subnets()
+        sn_list = self.vpc.output_private_subnets()
 
         subnet_refs = [
                     Ref(
@@ -68,7 +68,6 @@ class RDSStack(BaseStack):
                     for i in sn_list
                 ]
 
-
         sg_refs = [
                     Ref(
                         t.add_parameter(Parameter(
@@ -79,7 +78,6 @@ class RDSStack(BaseStack):
                     for i in self.security_groups
                 ]
 
-
         params = t.add_resource(rds.DBParameterGroup(
                     '{}RDSParamGroup'.format(self.stack_name),
                     Family='{}{}'.format(self.db_type, self.db_version),
@@ -88,7 +86,8 @@ class RDSStack(BaseStack):
 
         sn_groups = t.add_resource(rds.DBSubnetGroup(
                         '{}RDSSubnetGroup'.format(self.stack_name),
-                        DBSubnetGroupDescription='{} Subnet Group'.format(self.stack_name),
+                        DBSubnetGroupDescription='{} Subnet Group'.format(
+                            self.stack_name),
                         SubnetIds=subnet_refs
                         ))
 
@@ -97,7 +96,7 @@ class RDSStack(BaseStack):
                     AllocatedStorage=Ref(instance_size),
                     BackupRetentionPeriod=Ref(backup_retention),
                     DBInstanceClass=Ref(instance_type),
-                    DBSubnetGroupName=Ref(sn_group),
+                    DBSubnetGroupName=Ref(sn_groups),
                     Engine=self.db_type,
                     EngineVersion=self.db_version,
                     DBParameterGroupName=Ref(params),
@@ -107,5 +106,13 @@ class RDSStack(BaseStack):
                     PubliclyAccessible=self.public,
                     StorageType=Ref(storage_type),
                     VPCSecurityGroups=sg_refs,
+                ))
+
+        t.add_output([
+            Output(
+                '{}RDSInstance'.format(self.stack_name),
+                Value=Ref(db)
+            )
+        ])
 
         return t

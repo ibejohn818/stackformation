@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import (BaseStack)
 import troposphere.logs as logs
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,

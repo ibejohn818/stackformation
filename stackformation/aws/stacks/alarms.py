@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import (BaseStack, SoloStack)
 import troposphere.cloudwatch as alarm
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -22,11 +22,13 @@ class Alarm(object):
 
 class CustomAlarm(Alarm):
 
-    def __init__(self, name):
+    def __init__(self, name, description=""):
 
         super(CustomAlarm, self).__init__(name)
 
-        self.params = namedtuple('params', ['stat', 'period', 'evals', 'missing'])
+        self.params = namedtuple(
+            'params', [
+                'stat', 'period', 'evals', 'missing'])
         self.alarm = namedtuple('alarm', ['namespace', 'metric'])
         self.description = description
 
@@ -46,7 +48,6 @@ class ELBHealthyHostsAlarm(ELBAlarm):
         name = '{}ELBHealthyHostsAlarm'.format(elb_stack.stack_name)
         super(ELBHealthyHostsAlarm, self).__init__(name)
 
-
     def _build_alarm(self, template, topics):
 
         t = template
@@ -63,7 +64,7 @@ class ELBHealthyHostsAlarm(ELBAlarm):
                 Type='String'
             )))
 
-        a = t.add_resource(alarm.Alarm(
+        t.add_resource(alarm.Alarm(
             '{}HealthHosts'.format(elb_name),
             AlarmDescription='{} Health Hosts'.format(elb_name),
             MetricName='HealthyHostCount',
@@ -84,6 +85,7 @@ class ELBHealthyHostsAlarm(ELBAlarm):
             OKActions=topics,
             TreatMissingData='missing'
         ))
+
 
 class EC2CpuBaseAlarm(Alarm):
 
@@ -113,7 +115,7 @@ class EC2HighCpuAlarm(EC2CpuBaseAlarm):
     Returns:
         void
 
-    """ # noqa
+    """  # noqa
 
     def __init__(self, ec2_stack):
         name = '{}HighCpuAlarm'.format(ec2_stack.get_stack_name())

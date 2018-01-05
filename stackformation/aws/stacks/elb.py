@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import BaseStack
 import troposphere.elasticloadbalancing as elb
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -15,12 +15,21 @@ class ELBStack(BaseStack):
         super(ELBStack, self).__init__("ELB", 100)
 
         self.stack_name = stack_name
-        self.is_public = True
+        self._is_public = True
         self.public_subnets = True
         self.vpc = vpc
         self.listeners = []
         self.crosszone = True
         self.security_groups = []
+
+    @property
+    def is_public(self):
+        return self._is_public
+
+    @is_public.setter
+    def is_public(self, val):
+        self._is_public = val
+        return self._is_public
 
     def get_scheme(self):
         """
@@ -61,19 +70,23 @@ class ELBStack(BaseStack):
             for group in self.security_groups
         ]
 
-        health_check_unhealthy_threshold = t.add_parameter(Parameter(
-            'Input{}HealthUnhealthyThreshold'.format(self.stack_name),
-            Type='String',
-            Default='3',
-            Description='{} ELB HealthCheck Unhealthy Threshold'.format(self.stack_name)
-        ))
+        health_check_unhealthy_threshold = t.add_parameter(
+            Parameter(
+                'Input{}HealthUnhealthyThreshold'.format(
+                    self.stack_name),
+                Type='String',
+                Default='3',
+                Description='{} ELB HealthCheck Unhealthy Threshold'.format(
+                    self.stack_name)))
 
-        health_check_healthy_threshold = t.add_parameter(Parameter(
-            'Input{}HealthHealthyThreshold'.format(self.stack_name),
-            Type='String',
-            Default='3',
-            Description='{} ELB HealthCheck Healthy Threshold'.format(self.stack_name)
-        ))
+        health_check_healthy_threshold = t.add_parameter(
+            Parameter(
+                'Input{}HealthHealthyThreshold'.format(
+                    self.stack_name),
+                Type='String',
+                Default='3',
+                Description='{} ELB HealthCheck Healthy Threshold'.format(
+                    self.stack_name)))
 
         health_check_interval = t.add_parameter(Parameter(
             'Input{}HealthInterval'.format(self.stack_name),

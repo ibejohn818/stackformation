@@ -36,7 +36,7 @@ def match_stack(selector, stack):
     Returns:
         :obj:`stackformation.BaseStack`: If stack matches
         bool: False if selector did not match
-    """ # noqa
+    """  # noqa
     if not isinstance(selector, list):
         selector = selector.split(' ')
 
@@ -63,6 +63,7 @@ def match_stack(selector, stack):
             result = False
 
     return result
+
 
 def match_image(selector, image_name):
 
@@ -117,20 +118,19 @@ def ucfirst(word):
     ls[0] = ls[0].upper()
     return ''.join(ls)
 
-def tparam(template, name, value,description, default=None):
+
+def tparam(template, name, value, description, default=None):
 
     p = template.add_parameter(Parameter(
-            name,
-            Type='String',
-            Description=description
-           ))
+        name,
+        Type='String',
+        Description=description
+    ))
 
     if default:
         p.Default = default
 
     return p
-
-
 
 
 def load_infra_module(infra_file):
@@ -144,6 +144,7 @@ def load_infra_module(infra_file):
         exit(1)
 
     return module
+
 
 def template_env(path):
 

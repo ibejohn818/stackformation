@@ -1,9 +1,9 @@
 from stackformation.aws.stacks import BaseStack
 from stackformation.aws import Ami
 import logging
-from colorama import Fore, Style, Back # noqa
+from colorama import Fore, Style, Back  # noqa
 from troposphere import ec2
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
@@ -17,17 +17,35 @@ logger = logging.getLogger(__name__)
 class EC2Stack(BaseStack):
 
     def __init__(self, stack_name, vpc, iam_profile):
+        """ EC2 Instance stack
 
+
+        Args:
+            stack_name (str): Name of the EC2 Stack
+            vpc (:obj:`VPCStack`): The VPC stack the instace will be creeated in
+            iam_profile (:obj:`EC2Profile`): The IAM EC2 Instance profile
+
+        Attributes:
+            private_subnet (bool): if chosen creates the instance in the first private subnet (usually AZ A )
+            subnet (vpc_subnet): If a specific subnet is give, overrides the private_subnet property
+            security_groups (list[:obj:`VPC:SecurityGroup`]): List of security groups to attach
+        """ # noqa
         super(EC2Stack, self).__init__("EC2", 500)
 
         self.stack_name = stack_name
         self.vpc = vpc
         self.iam_profile = iam_profile
         self.private_subnet = False
+        self.subnet = False
         self.security_groups = []
         self.use_key = None
         self.volumes = []
         self.ami = None
+        self.eip = None
+
+    def set_eip(self, eip):
+        self.eip = eip
+        return self.eip
 
     def add_security_group(self, group):
 

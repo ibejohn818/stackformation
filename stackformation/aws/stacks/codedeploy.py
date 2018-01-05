@@ -1,7 +1,7 @@
 from stackformation import BaseStack
 from stackformation.aws.stacks import ec2, asg
 import troposphere.codedeploy as cdeploy
-from troposphere import ( # noqa
+from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
