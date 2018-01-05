@@ -68,6 +68,7 @@ echo {{{{context('{1}')}}}} >  /opt/allocation.eip
 class MountEBS(UserData):
 
     def __init__(self, ebs_volume, path):
+        super(MountEBS, self).__init__('MountEBS{}'.format(ebs_volume.name))
         self.ebs_volume = ebs_volume
         self.path = path
 
@@ -81,3 +82,4 @@ mkdir -p {1}
 echo '{{{{context('Input{0}EBSDeviceName')}}}} {1} ext4 defaults,nofail 0 2' >> /etc/fstab
 mount -a
         """.format(self.ebs_volume.name, self.path) # noqa
+

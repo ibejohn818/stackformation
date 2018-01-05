@@ -577,7 +577,6 @@ class IAMStack(BaseStack):
         self.groups = []
 
     def find_role(self, clazz, name=None):
-
         return self.find_class_in_list(self.roles, clazz, name)
 
     def add_role(self, role):

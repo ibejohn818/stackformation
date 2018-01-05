@@ -7,7 +7,7 @@ import imp
 import stackformation.deploy as dep
 import logging
 import os
-from stackformation.utils import (match_stack)
+from stackformation.utils import (match_stack, match_image)
 import jinja2
 from colorama import Fore, Style
 import jmespath
@@ -57,7 +57,7 @@ def test():
 
     print(mod.Ami.ANSIBLE_DIR)
 
-@images.command(help="", name='list')
+@images.command(help="List images", name='list')
 def list_images():
 
     infra = utils.load_infra_module(INFRA_FILE).infra
@@ -132,7 +132,7 @@ def build_image(name=None, active=False):
     for image in images:
         if not name:
             results.append(image)
-        elif image.name.startswith(name):
+        elif match_image(name, image.name):
             results.append(image)
 
     for r in results:
