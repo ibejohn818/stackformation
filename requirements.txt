@@ -1,6 +1,6 @@
 boto3==1.5.9
 Click==6.7
-troposphere
+troposphere==2.1.2
 awacs
 jinja2
 inflection
