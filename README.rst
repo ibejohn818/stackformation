@@ -6,6 +6,9 @@ StackFormation
 .. image:: https://img.shields.io/pypi/v/jh-stackformation.svg
         :target: https://pypi.python.org/pypi/jh-stackformation
 
+.. image:: https://travis-ci.org/ibejohn818/stackformation.svg?branch=master
+    :target: https://travis-ci.org/ibejohn818/stackformation
+
 .. image:: https://codecov.io/gh/ibejohn818/stackformation/branch/master/graph/badge.svg
         :target: https://codecov.io/gh/ibejohn818/stackformation
 
