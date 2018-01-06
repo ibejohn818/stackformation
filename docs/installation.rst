@@ -12,7 +12,7 @@ To install StackFormation, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install stackformation
+    $ pip install jh-stackformation
 
 This is the preferred method to install StackFormation, as it will always install the most recent stable release. 
 
