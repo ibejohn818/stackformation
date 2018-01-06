@@ -21,7 +21,7 @@ Examples / Demo
 ---------------
 
 | Examples and docker helper scripts can be found @
-| https://github.com/ibejohn818/stackformation-demos
+| https://github.com/ibejohn818/stackformation-demo
 
 -  Free software: MIT license
 -  Documentation: https://jh-stackformation.readthedocs.io.
