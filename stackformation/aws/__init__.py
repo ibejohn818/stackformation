@@ -56,6 +56,12 @@ logger = logging.getLogger(__name__)
 
 
 class PackerImage(object):
+    """Base class to launch an AMI build with Hashicorp Packer
+
+    Attributes:
+        ANSIBLE_DIR (str): Path the the ansible directory. Reference ansible best-practices for directory layout (http://docs.ansible.com/ansible/latest/playbooks_best_practices.html#directory-layout)
+        ANSIBLE_ROLES (list[str]): List of paths to invidual roles.
+    """ # noqa
 
     ANSIBLE_DIR = None
     ANSIBLE_ROLES = None
@@ -68,7 +74,7 @@ class PackerImage(object):
         self.boto_session = None
         self.stack = None
         self.base_path = None
-        self.path = "./"
+        self.path = "./__packer__"
         self.builders = []
         self.provisioners = []
         self.promote = False

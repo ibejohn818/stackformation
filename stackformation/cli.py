@@ -126,7 +126,7 @@ def ansible_config(ansible_roles):
     is_flag=True,
     default=False,
     help='Make image active')
-def build_image(name=None, active=False):
+def images_build(name=None, active=False):
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -148,7 +148,7 @@ def build_image(name=None, active=False):
         exit(0)
 
     if active:
-        click.echo("Images will be made active")
+        click.echo("Image(s) will be made active")
 
     click.confirm("Do you wish to build the matched images?", abort=True)
 
