@@ -12,8 +12,8 @@ StackFormation
 .. image:: https://codecov.io/gh/ibejohn818/stackformation/branch/master/graph/badge.svg
         :target: https://codecov.io/gh/ibejohn818/stackformation
 
-.. image:: https://readthedocs.org/projects/stackformation/badge/?version=latest
-        :target: https://stackformation.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/jh-stackformation/badge/?version=latest
+        :target: https://jh-stackformation.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/ibejohn818/stackformation/shield.svg
