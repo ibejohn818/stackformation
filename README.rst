@@ -10,13 +10,26 @@ Installation
 
 ``pip install jh-stackformation``
 
+| Framework requires python >= 3.5.x and Hashicorp Packer in-order to
+  build custom AMI's.
+| Docker is the preferred method of execution ( all dependencies
+  including packer are included ) however VirtualEnv works A-OK.
+  Reference the demo repo below for examples and helper scripts using
+  the docker images built on docker-hub.
+
+Examples / Demo
+---------------
+
+| Examples and docker helper scripts can be found @
+| https://github.com/ibejohn818/stackformation-demos
+
 -  Free software: MIT license
--  Documentation: https://stackformation.readthedocs.io.
+-  Documentation: https://jh-stackformation.readthedocs.io.
 
-Features
-~~~~~~~~
+TODO's
+^^^^^^
 
--  TODO
+-  
 
 .. |pypi| image:: https://img.shields.io/pypi/v/jh-stackformation.svg
    :target: https://pypi.python.org/pypi/jh-stackformation
