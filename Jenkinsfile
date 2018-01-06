@@ -40,7 +40,7 @@ node {
         if (env.BRANCH_NAME == "master") {
             stage("Trigger Docker Latest Build") {
                 withCredentials([string(credentialsId: 'StackformationDockerHubBuildToken', variable: 'BUILD_TOKEN')]) {
-                    sh "curl -H 'Content-Type: application/json' --data '{\"docker_tag\": \"master\"}' -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/${env.BUILD_TOKEN}/"
+                    sh "curl -H 'Content-Type: application/json' --data '{\"source_type\": \"Branch\", \"source_name\": \"master\"}' -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/${env.BUILD_TOKEN}/"
                 }
             }
         }
