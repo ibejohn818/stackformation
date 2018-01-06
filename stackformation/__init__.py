@@ -97,11 +97,12 @@ class Context(object):
 
 class SSMParameter(object):
 
-    def __init__(self, name, type="SecureString", kms_key = None):
+    def __init__(self, name, type="SecureString", kms_key = None, version=1):
 
         self.name = name
         self.type = type
-        self.kms_key = kms_key
+        self.kms_key = kms_key,
+        self.version = 1
 
 
 class Infra(object):
