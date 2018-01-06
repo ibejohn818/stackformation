@@ -1,6 +1,6 @@
 moto==1.1.25
 bumpversion==0.5.3
-wheel
+wheel==0.30.0
 watchdog
 flake8
 tox
