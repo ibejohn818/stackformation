@@ -1,5 +1,5 @@
 boto3==1.5.9
-Click
+Click==6.7
 troposphere
 awacs
 jinja2
