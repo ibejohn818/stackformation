@@ -20,6 +20,11 @@ StackFormation
      :target: https://pyup.io/repos/github/ibejohn818/stackformation/
      :alt: Updates
 
+.. image:: https://img.shields.io/docker/build/ibejohn818/stackformation.svg
+        :target: https://hub.docker.com/r/ibejohn818/stackformation
+
+.. image:: https://img.shields.io/docker/automated/ibejohn818/stackformation.svg
+        :target: https://hub.docker.com/r/ibejohn818/stackformation/builds/
 
 Cloudformation framework to enforce infrastructure-as-code paradigm
 
