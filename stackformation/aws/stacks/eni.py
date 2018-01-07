@@ -4,6 +4,7 @@ from stackformation.aws.stack import (BaseStack)
 class ENI(object):
     pass
 
+
 class ENIStack(BaseStack):
 
     def __init__(self, name=""):
@@ -17,5 +18,3 @@ class ENIStack(BaseStack):
         t = self._init_template()
 
         return t
-
-
