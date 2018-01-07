@@ -376,8 +376,9 @@ class BaseStack(StackComponent):
 
                         if rs.endswith("COMPLETE"):
                             color = utils.colors('g', True)
+                        elif rs.startswith("DELETE"):
+                            color = utils.colors('b')
                         elif rs.endswith("FAILED") or \
-                                rs.startswith("DELETE") or \
                                 re.match('(ROLLBACK)', rs):
                             color = utils.colors('r')
                         elif rs.endswith('PROGRESS'):

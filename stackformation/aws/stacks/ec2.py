@@ -35,13 +35,26 @@ class EC2Stack(BaseStack):
         self.stack_name = stack_name
         self.vpc = vpc
         self.iam_profile = iam_profile
-        self.private_subnet = False
+        self._private_subnet = False
         self.subnet = False
         self.security_groups = []
         self.use_key = None
         self.volumes = []
         self._ami = None
-        self.eip = None
+        self.eip = None,
+
+        # eth0 is always managed by the stack
+        self.network_interfaces = [
+            ec2.NetworkInterfaceProperty(
+                Description='ENI for host',
+                DeviceIndex=0,
+                GroupSet=[],
+                DeleteOnTermination=True,
+            )
+        ]
+
+    def add_network_interface(self, eni):
+        self.netowrk_interfaces.append(eni)
 
     def set_eip(self, eip):
         self.eip = eip
@@ -78,6 +91,15 @@ class EC2Stack(BaseStack):
             for k, v in enumerate(ud_list):
                 varname = "{}{}".format(ud_key, k)
                 context.add_vars({varname: v})
+
+    @property
+    def private_subnet(self):
+        return self._private_subnet
+
+    @private_subnet.setter
+    def private_subnet(self, value):
+        self._private_subnet = value
+        return self.private_subnet
 
     @property
     def ami(self):
@@ -153,18 +175,11 @@ class EC2Stack(BaseStack):
                 )))
             )
 
-        interface = ec2.NetworkInterfaceProperty(
-            Description='ENI for host',
-            DeviceIndex=0,
-            GroupSet=[],
-            DeleteOnTermination=True,
-        )
-
         # subnet
         if self.private_subnet:
             subnet = self.vpc.output_private_subnets()[0]
         else:
-            interface.AssociatePublicIpAddress = True
+            self.network_interfaces[0].AssociatePublicIpAddress = True
             subnet = self.vpc.output_public_subnets()[0]
 
         subnet_param = t.add_parameter(Parameter(
@@ -173,7 +188,7 @@ class EC2Stack(BaseStack):
             Description='Subnet for ec2 {}'.format(self.stack_name)
         ))
 
-        interface.SubnetId = Ref(subnet_param)
+        self.network_interfaces[0].SubnetId = Ref(subnet_param)
 
         for sg in self.security_groups:
 
@@ -182,7 +197,7 @@ class EC2Stack(BaseStack):
                 Type='String'
             ))
 
-            interface.GroupSet.append(Ref(sg_param))
+            self.network_interfaces[0].GroupSet.append(Ref(sg_param))
 
         volumes = []
         for volume in self.volumes:
@@ -210,7 +225,7 @@ class EC2Stack(BaseStack):
             Volumes=volumes,
             InstanceType=Ref(instance_type),
             IamInstanceProfile=Ref(instance_profile_param),
-            NetworkInterfaces=[interface],
+            NetworkInterfaces=self.network_interfaces,
             BlockDeviceMappings=[
                 ec2.BlockDeviceMapping(
                     DeviceName=Ref(root_device_name),
