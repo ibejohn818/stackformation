@@ -1,6 +1,6 @@
 import logging
 import stackformation
-import stackformation.utils as utils
+from stackformation import utils
 import re
 import datetime
 import pytz
@@ -11,27 +11,6 @@ import botocore
 from colorama import Fore, Style, Back  # noqa
 
 logger = logging.getLogger(__name__)
-
-
-status_to_color = {
-    'CREATE_IN_PROGRESS': Fore.YELLOW,
-    'CREATE_FAILED': Fore.RED,
-    'CREATE_COMPLETE': Fore.GREEN,
-    'ROLLBACK_IN_PROGRESS': Fore.RED,
-    'ROLLBACK_FAILED': Fore.RED,
-    'ROLLBACK_COMPLETE': Fore.RED,
-    'DELETE_IN_PROGRESS': Fore.YELLOW,
-    'DELETE_FAILED': Fore.RED,
-    'DELETE_COMPLETE': Fore.GREEN,
-    'UPDATE_FAILED': Fore.RED,
-    'UPDATE_IN_PROGRESS': Fore.YELLOW,
-    'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
-    'UPDATE_COMPLETE': Fore.GREEN,
-    'UPDATE_ROLLBACK_IN_PROGRESS': Fore.RED,
-    'UPDATE_ROLLBACK_FAILED': Fore.RED,
-    'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
-    'UPDATE_ROLLBACK_COMPLETE': Fore.GREEN,
-}
 
 
 class StackComponent(object):
@@ -257,10 +236,20 @@ class BaseStack(StackComponent):
         try:
             if present:
                 cf.update_stack(**dep_kw)
-                logger.info('UPDATING STACK: {}'.format(self.get_stack_name()))
+                logger.info(
+                    '{}UPDATING STACK:{} {}'.format(
+                        utils.colors('b'),
+                        Style.RESET_ALL,
+                        self.get_stack_name()))
             else:
                 cf.create_stack(**dep_kw)
-                logger.info('CREATING STACK: {}'.format(self.get_stack_name()))
+                logger.info(
+                    '{}CREATING STACK:{} {}'.format(
+                        utils.colors(
+                            'b',
+                            True),
+                        Style.RESET_ALL,
+                        self.get_stack_name()))
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']
             if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):  # noqa
@@ -269,6 +258,9 @@ class BaseStack(StackComponent):
                 raise e
 
         return True
+
+    def before_destroy(self, infra, context):
+        pass
 
     def start_destroy(self, infra, context):
 
@@ -298,8 +290,15 @@ class BaseStack(StackComponent):
         }
 
         try:
+            self.before_destroy(infra, context)
             cf.delete_stack(**kw)
-            logger.info('DESTROYING STACK: {}'.format(self.get_stack_name()))
+            logger.info(
+                '{}DESTROYING STACK:{} {}'.format(
+                    utils.colors(
+                        'r',
+                        True),
+                    Style.RESET_ALL,
+                    self.get_stack_name()))
         except botocore.exceptions.ClientError as e:
             err = e.response['Error']
             if(err['Code'] == "ValidationError" and re.search("No updates", err['Message'])):  # noqa
@@ -371,13 +370,20 @@ class BaseStack(StackComponent):
                         if 'ResourceStatusReason' in e:
                             reason = e['ResourceStatusReason']
 
-                        # logger style
-                        if e['ResourceStatus'] in status_to_color:
-                            color = utils.color_index('cf_status')[
-                                e['ResourceStatus']
-                            ]
-                        else:
-                            color = Fore.MAGENTA
+                        # term colors
+                        color = Fore.MAGENTA
+                        rs = e['ResourceStatus']
+
+                        if rs.endswith("COMPLETE"):
+                            color = utils.colors('g', True)
+                        elif rs.endswith("FAILED") or \
+                                rs.startswith("DELETE") or \
+                                re.match('(ROLLBACK)', rs):
+                            color = utils.colors('r')
+                        elif rs.endswith('PROGRESS'):
+                            color = utils.colors('y')
+                        elif re.match('^(CREATE_|UPDATE_)', e['ResourceStatus']):  # noqa
+                            color = utils.colors('g')
 
                         logger.info("{} {} ({}): [{}]: {}{}{}{}".format(
                             color,

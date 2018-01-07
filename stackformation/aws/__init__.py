@@ -61,7 +61,7 @@ class PackerImage(object):
     Attributes:
         ANSIBLE_DIR (str): Path the the ansible directory. Reference ansible best-practices for directory layout (http://docs.ansible.com/ansible/latest/playbooks_best_practices.html#directory-layout)
         ANSIBLE_ROLES (list[str]): List of paths to invidual roles.
-    """ # noqa
+    """  # noqa
 
     ANSIBLE_DIR = None
     ANSIBLE_ROLES = None
