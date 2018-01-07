@@ -12,3 +12,4 @@ pytest==3.3.2
 pytest-runner==3.0
 pytest-cov==2.5.1
 twine==1.9.1
+magicmock==0.3
