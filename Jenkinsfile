@@ -8,8 +8,8 @@ node {
 
     try {
 
-        def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
-
+        //def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
+        def img_tag =  "StackformationJenkinsTest"
         stage("Stage Repo") {
             echo "Checkout repo"
             checkout scm
@@ -73,7 +73,7 @@ node {
         currentBuild.result = "FAILURE"
     } finally {
 
-        def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
-        sh "docker rmi ${img_tag} --force"
+        //def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
+        //sh "docker rmi ${img_tag} --force"
     }
 }
