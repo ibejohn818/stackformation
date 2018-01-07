@@ -411,14 +411,14 @@ class VPCStack(BaseStack, SoloStack):
         # create public subnets
         cls_c = 0
         for i in range(self.defaults['num_azs']):
-            cls_c += 1
+            cls_c += 2
             key = i + 1
             sname = 'PublicSubnet{}'.format(key)
             sn = t.add_resource(ec2.Subnet(
                 sname,
                 VpcId=Ref(vpc),
                 AvailabilityZone=Select(i, GetAZs(Ref("AWS::Region"))),
-                CidrBlock="{}.{}.0/24".format(self.base_cidr, cls_c),
+                CidrBlock="{}.{}.0/23".format(self.base_cidr, cls_c),
                 Tags=Tags(
                     Name=sname
                 )
@@ -446,14 +446,14 @@ class VPCStack(BaseStack, SoloStack):
 
         # create private subnets
         for i in range(self.defaults['num_azs']):
-            cls_c += 1
+            cls_c += 2
             key = i + 1
             sname = 'PrivateSubnet{}'.format(key)
             sn = t.add_resource(ec2.Subnet(
                 sname,
                 VpcId=Ref(vpc),
                 AvailabilityZone=Select(i, GetAZs(Ref("AWS::Region"))),
-                CidrBlock="{}.{}.0/24".format(self.base_cidr, cls_c),
+                CidrBlock="{}.{}.0/23".format(self.base_cidr, cls_c),
                 Tags=Tags(
                     Name=sname
                 )
