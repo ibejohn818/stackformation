@@ -127,7 +127,8 @@ def ansible_config(ansible_roles):
     is_flag=True,
     default=False,
     help='Make image active')
-def images_build(name=None, active=False):
+# @click.option("--yes","-y", is_flag=True, default=False, help="Force build")
+def images_build(name=None, active=False, ):
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 

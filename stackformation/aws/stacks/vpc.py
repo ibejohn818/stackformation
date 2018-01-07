@@ -1,4 +1,5 @@
 from stackformation.aws.stacks import BaseStack, SoloStack
+from stackformation.aws.stacks import (eip)
 from troposphere import ec2
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
@@ -203,6 +204,8 @@ class VPCStack(BaseStack, SoloStack):
         self.base_cidr = "10.0"
         self.enable_dns = True,
         self.enable_dns_hostnames = True
+        self.nat_eip = None
+        self.nat_gateway = False
 
         self.route_tables = {
             'private': [],
@@ -237,6 +240,19 @@ class VPCStack(BaseStack, SoloStack):
         self.default_acls.update({service_name: (
             port_a, port_b, proto, access, weight
         )})
+
+    def add_nat_gateway(self, nat_eip):
+        """Add nat-gateay to VPC
+
+        Args:
+            eip (:obj:`stackformation.aws.stacks.eip.EIP`): EIP For Nat-Gateway endpoint
+        """  # noqa
+
+        if not isinstance(nat_eip, (eip.EIP)):
+            raise Exception("Natgateway Requires EIP Instance")
+
+        self.nat_gateway = True
+        self.nat_eip = nat_eip
 
     def add_security_group(self, secgroup):
 
@@ -462,6 +478,33 @@ class VPCStack(BaseStack, SoloStack):
                     Value=Ref(sn)
                 )
             ])
+
+        if self.nat_gateway:
+
+            # nat EIP Allocation ID Param
+            nat_eip_param = t.add_parameter(Parameter(
+                self.nat_eip.output_allocation_id(),
+                Type='String',
+                Description='Nat Gateway EIP'
+            ))
+
+            # Nat Gateway Resource
+            nat_gw = t.add_resource(ec2.NatGateway(
+                "{}NatGateway".format(self.stack_name),
+                AllocationId=Ref(nat_eip_param),
+                SubnetId=Ref(self.subnets['public'][0]),
+                Tags=Tags(
+                    Name="{} Nat-Gateway".format(self.stack_name)
+                )
+            ))
+
+            # Create route in private route-table
+            t.add_resource(ec2.Route(
+                'NatGatewayRoute',
+                DestinationCidrBlock='0.0.0.0/0',
+                NatGatewayId=Ref(nat_gw),
+                RouteTableId=Ref(private_route_table)
+            ))
 
         # build security groups
         for sg in self.security_groups:
