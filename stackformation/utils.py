@@ -158,28 +158,22 @@ def template_env(path):
     return env
 
 
-def color_index(index):
+def colors(flavor=None, bright=None):
 
-    colors = {
-            'cf_status': {
-                'CREATE_IN_PROGRESS': Fore.YELLOW,
-                'CREATE_FAILED': Fore.RED,
-                'CREATE_COMPLETE': Fore.GREEN,
-                'ROLLBACK_IN_PROGRESS': Fore.RED,
-                'ROLLBACK_FAILED': Fore.RED,
-                'ROLLBACK_COMPLETE': Fore.RED,
-                'DELETE_IN_PROGRESS': Fore.YELLOW,
-                'DELETE_FAILED': Fore.RED,
-                'DELETE_COMPLETE': Fore.GREEN,
-                'UPDATE_FAILED': Fore.RED,
-                'UPDATE_IN_PROGRESS': Fore.YELLOW,
-                'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
-                'UPDATE_COMPLETE': Fore.GREEN,
-                'UPDATE_ROLLBACK_IN_PROGRESS': Fore.RED,
-                'UPDATE_ROLLBACK_FAILED': Fore.RED,
-                'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS': Fore.YELLOW,
-                'UPDATE_ROLLBACK_COMPLETE': Fore.GREEN,
-            }
-        } # noqa
+    flavs = {
+        'g': Fore.GREEN,
+        'y': Fore.YELLOW,
+        'b': Fore.CYAN,
+        'r': Fore.RED,
+        'w': Fore.WHITE
+    }
 
-    return colors[index]
+    res = [Style.RESET_ALL]
+
+    if bright is not None:
+        res.append(Style.BRIGHT)
+
+    if flavor is not None:
+        res.append(flavs[flavor])
+
+    return "".join(res)
