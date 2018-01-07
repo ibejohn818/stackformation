@@ -62,6 +62,7 @@ class BaseStack(StackComponent):
         defaults.update(kwargs)
         self.template_components = {}
         self._stack_info = None
+        self.stack_inputs = {}
 
     def _init_template(self):
 

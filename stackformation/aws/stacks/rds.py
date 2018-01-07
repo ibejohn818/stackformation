@@ -44,6 +44,12 @@ class RDSStack(BaseStack):
     def add_security_group(self, sg):
         self.security_groups.append(sg)
 
+    def output_instance(self):
+        return "{}{}RDS".format(
+                self.get_stack_name(),
+                self.stack_name
+                )
+
     def build_template(self):
 
         t = self._init_template()

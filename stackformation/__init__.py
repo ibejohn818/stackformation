@@ -248,3 +248,18 @@ class Infra(object):
             utils.ucfirst(i)
             for i in self.prefix
         ])
+
+    def get_bucket_name(self):
+        """Return the bucket name for the infra
+        """
+        pass
+
+    def ensure_bucket(self):
+        """Make sure the infra's bucket is created
+        """
+        pass
+
+    def destroy_bucket(self):
+        """Remove infra bucket
+        """
+        pass
