@@ -29,7 +29,7 @@ class EC2Stack(BaseStack):
             private_subnet (bool): if chosen creates the instance in the first private subnet (usually AZ A )
             subnet (vpc_subnet): If a specific subnet is give, overrides the private_subnet property
             security_groups (list[:obj:`VPC:SecurityGroup`]): List of security groups to attach
-        """ # noqa
+        """  # noqa
         super(EC2Stack, self).__init__("EC2", 500)
 
         self.stack_name = stack_name
