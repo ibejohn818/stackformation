@@ -188,24 +188,18 @@ class AllPortsSecurityGroup(SecurityGroup):
 
 class VPCStack(BaseStack, SoloStack):
 
-    def __init__(self, **kwargs):
+    def __init__(self, name=""):
 
         super(VPCStack, self).__init__("VPC", 1)
 
-        # defaults
-        self.defaults = {
-            'num_azs': 2,
-            'nat_gateway': False
-        }
-
-        self.defaults.update(kwargs)
-
+        self.stack_name = name
         self.security_groups = []
         self.base_cidr = "10.0"
         self.enable_dns = True,
         self.enable_dns_hostnames = True
         self.nat_eip = None
         self.nat_gateway = False
+        self._num_azs = 2
 
         self.route_tables = {
             'private': [],
@@ -225,6 +219,15 @@ class VPCStack(BaseStack, SoloStack):
         self.add_default_acl("SSH", 22, 22, 6, 'false', 103)
         self.add_default_acl("EPHEMERAL", 49152, 65535, 6, 'false', 104)
         self.add_default_acl("ALLIN", None, None, 6, 'true', 100)
+
+    @property
+    def num_azs(self):
+        return self._num_azs
+
+    @num_azs.setter
+    def num_azs(self, value):
+        self._num_azs = value
+        return self.num_azs
 
     def add_default_acl(
             self,
@@ -274,7 +277,7 @@ class VPCStack(BaseStack, SoloStack):
         t = self._init_template()
 
         # add az outputs
-        for i in range(0, self.defaults['num_azs']):
+        for i in range(0, self.num_azs):
             t.add_output([
                 Output(
                     'AZ{}'.format(i + 1),
@@ -410,7 +413,7 @@ class VPCStack(BaseStack, SoloStack):
 
         # create public subnets
         cls_c = 0
-        for i in range(self.defaults['num_azs']):
+        for i in range(self.num_azs):
             cls_c += 2
             key = i + 1
             sname = 'PublicSubnet{}'.format(key)
@@ -445,7 +448,7 @@ class VPCStack(BaseStack, SoloStack):
             ])
 
         # create private subnets
-        for i in range(self.defaults['num_azs']):
+        for i in range(self.num_azs):
             cls_c += 2
             key = i + 1
             sname = 'PrivateSubnet{}'.format(key)
@@ -524,19 +527,19 @@ class VPCStack(BaseStack, SoloStack):
     def output_azs(self):
         return [
             "{}AZ{}".format(self.get_stack_name(), i + 1)
-            for i in range(0, self.defaults['num_azs'])
+            for i in range(0, self.num_azs)
         ]
 
     def output_private_subnets(self):
         return [
             "{}PrivateSubnet{}".format(self.get_stack_name(), i + 1)
-            for i in range(0, self.defaults['num_azs'])
+            for i in range(0, self.num_azs)
         ]
 
     def output_public_subnets(self):
         return [
             "{}PublicSubnet{}".format(self.get_stack_name(), i + 1)
-            for i in range(0, self.defaults['num_azs'])
+            for i in range(0, self.num_azs)
         ]
 
     def output_vpc(self):
