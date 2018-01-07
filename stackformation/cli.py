@@ -13,7 +13,7 @@ import jinja2
 from colorama import Fore, Style
 import jmespath
 
-INFRA_FILE = "infra.py"
+INFRA_FILE = "stacks.py"
 
 HELP = {
     'image_ansible_config': """
@@ -24,8 +24,8 @@ HELP = {
 
     CloudFormation framework to enforce infrastructure-as-code paradigm
 """.format(stackformation.__version__),
-'main_file_override': """(Default: infra.py) Override the infrastructure configuration file
-""",
+'stack_file_override': """(Default: {}) Override the infrastructure configuration file
+""".format(INFRA_FILE),
     'images_build': """
 Select the image to build from your configured images in your {0} file.
 If this is the first image being built it will automatically be made active.
@@ -43,8 +43,9 @@ context_settings = {
 @click.group(help=HELP['main'], context_settings=context_settings)
 @click.option(
     "--file-override",
-    default='infra.py',
-    help=HELP['main_file_override'])
+    "-z",
+    default=INFRA_FILE,
+    help=HELP['stack_file_override'])
 def main(file_override=None):
 
     if file_override is not None:
