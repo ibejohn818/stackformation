@@ -9,7 +9,7 @@ node {
     try {
 
         //def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
-        def img_tag =  "StackformationJenkinsTest"
+        def img_tag =  "stackformationjenkins"
         stage("Stage Repo") {
             echo "Checkout repo"
             checkout scm
