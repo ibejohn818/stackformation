@@ -14,12 +14,13 @@ def prod_infra():
 
     return (infra, prod_infra)
 
-def test_vpc(prod_infra):
+def test_vpc_stack(prod_infra):
 
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
 
     assert isinstance(vpc_stack, vpc.VPCStack)
 
@@ -38,7 +39,8 @@ def test_base_sec_group(prod_infra):
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
 
     base_sg = vpc_stack.add_security_group(vpc.SecurityGroup('base'))
 
@@ -52,7 +54,8 @@ def test_find_sec_group(prod_infra):
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
 
     ssh_sg = vpc_stack.add_security_group(vpc.SSHSecurityGroup("SSH"))
     web_sg = vpc_stack.add_security_group(vpc.WebSecurityGroup("Web"))
@@ -68,7 +71,9 @@ def test_add_sec_group(prod_infra):
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
+
 
     with pytest.raises(Exception) as e:
         vpc_stack.add_security_group(infra)
@@ -79,7 +84,8 @@ def test_ssh_sec_group(prod_infra):
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
 
     ssh_sg = vpc_stack.add_security_group(vpc.SSHSecurityGroup("SSH"))
 
@@ -112,7 +118,8 @@ def test_web_sec_group(prod_infra):
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
 
     web_sg = vpc_stack.add_security_group(vpc.WebSecurityGroup("Web"))
 
@@ -134,7 +141,9 @@ def test_all_ports_sec_group(prod_infra):
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
+
 
     ap_sg = vpc_stack.add_security_group(vpc.AllPortsSecurityGroup("Test"))
 
@@ -151,7 +160,9 @@ def test_nat_gateway(prod_infra):
     infra = prod_infra[0]
     prod_infra = prod_infra[1]
 
-    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack())
+    vpc_stack.num_azs = 3
+
     eip_stack = prod_infra.add_stack(eip.EIPStack())
     nat_eip = eip_stack.add_ip("NatEip")
 
