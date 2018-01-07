@@ -1,7 +1,8 @@
 import pytest
 
-from stackformation.aws.stacks import (vpc)
+from stackformation.aws.stacks import (vpc, eip)
 from stackformation import Infra
+import troposphere
 
 
 @pytest.fixture
@@ -144,3 +145,29 @@ def test_all_ports_sec_group(prod_infra):
     assert sg['Properties']['SecurityGroupIngress'][0]['ToPort'] == '-1'
     assert sg['Properties']['SecurityGroupIngress'][0]['FromPort'] == '-1'
     assert sg['Properties']['SecurityGroupIngress'][0]['CidrIp'] == '0.0.0.0/0'
+
+def test_nat_gateway(prod_infra):
+
+    infra = prod_infra[0]
+    prod_infra = prod_infra[1]
+
+    vpc_stack = prod_infra.add_stack(vpc.VPCStack(num_azs=3))
+    eip_stack = prod_infra.add_stack(eip.EIPStack())
+    nat_eip = eip_stack.add_ip("NatEip")
+
+    # test eip introspection
+    with pytest.raises(Exception) as e:
+        vpc_stack.add_nat_gateway(eip_stack)
+    assert "EIP Instance" in str(e)
+
+    # try with real EIP
+    vpc_stack.add_nat_gateway(nat_eip)
+
+    t = vpc_stack.build_template()
+
+    res = t.resources
+
+    assert isinstance(res['NatGateway'], (troposphere.ec2.NatGateway))
+    print(res['NatGatewayRoute'].to_dict())
+
+
