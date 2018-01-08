@@ -108,9 +108,9 @@ def list_images():
                         Style.RESET_ALL))
 
 
-@images.command(help=HELP['image_ansible_config'], name='ansible-config')
+@images.command(help=HELP['image_ansible_config'], name='ansible-dir')
 @click.option("--ansible-roles", is_flag=True, default=False)
-def ansible_config(ansible_roles):
+def ansible_dir(ansible_roles):
 
     mod = utils.load_infra_module(INFRA_FILE)
 
