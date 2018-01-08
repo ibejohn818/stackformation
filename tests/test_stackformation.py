@@ -1,4 +1,5 @@
 from stackformation import (Infra, BotoSession, Context)
+from stackformation.aws.stacks import (vpc, ec2, s3)
 import mock
 import pytest
 
@@ -44,3 +45,35 @@ def test_context():
     assert ctx.check_var('nothere') is None
     assert ctx.get_var('test') == 'test'
     assert ctx.get_var('nothere') is False
+
+
+@mock.patch("stackformation.boto3.session.Session")
+def test_infra(sess_mock):
+
+    sess_mock.return_value = True
+
+    session = BotoSession()
+
+    infra = Infra('Test', session)
+
+    vpc_stack = infra.add_stack(vpc.VPCStack())
+    s3_one = infra.add_stack(s3.S3Stack('one'))
+    s3_two = infra.add_stack(s3.S3Stack('two'))
+
+    # test find stack
+    vpc_find = infra.find_stack(vpc.VPCStack)
+
+    assert isinstance(vpc_find, (vpc.VPCStack))
+
+    assert infra.find_stack(s3.S3Stack, 'one').stack_name == 'one'
+    assert infra.find_stack(s3.S3Stack, 'two').stack_name == 'two'
+
+
+    # test list_stacks
+    assert len(infra.list_stacks()) == 3
+
+    # test sub
+    sub = infra.create_sub_infra('sub')
+    sub_sub = sub.create_sub_infra('sub')
+
+    assert sub_sub.prefix == ['sub', 'sub']

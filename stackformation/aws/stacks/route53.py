@@ -14,11 +14,13 @@ from troposphere import (  # noqa
 
 class Record(object):
 
-    def __init__(self, name):
+    def __init__(self, name, value):
 
         self.name = name
         self.ttl = str(3600)
         self.stack = None
+        self.weight = 900
+        self.value = value
 
     def set_ttl(self, val):
         self.ttl = str(val)
@@ -26,16 +28,14 @@ class Record(object):
     def _safe_dns_name(self, name):
         return name.replace(".", "")
 
+    def _return_resource_param(self):
+        pass
+
     def add_to_template(self, template):
         raise Exception("must implement add_to_template()")
 
 
 class ARecord(Record):
-
-    def __init__(self, name, value):
-
-        super(ARecord, self).__init__(name)
-        self.value = value
 
     def _is_ip(self, ip):
 
@@ -52,6 +52,7 @@ class ARecord(Record):
             Name="{}".format(zoneRecord.Name),
             Type="A",
             TTL=self.ttl,
+            Weight=self.weight
         )
 
         if self._is_ip(self.value):
