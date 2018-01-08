@@ -230,13 +230,17 @@ class Infra(object):
 
         return c
 
-    def find_stack(self, clazz):
+    def find_stack(self, clazz, name=None):
 
         stacks = []
 
         for s in self.stacks:
             if isinstance(s, clazz):
-                stacks.append(s)
+                if name is not None:
+                    if name == s.stack_name:
+                        stacks.append(s)
+                else:
+                    stacks.append(s)
 
         if len(stacks) > 0:
             return stacks[0]

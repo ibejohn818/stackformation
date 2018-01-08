@@ -29,17 +29,13 @@ class Record(object):
         return name.replace(".", "")
 
     def _return_resource_param(self):
+        pass
 
     def add_to_template(self, template):
         raise Exception("must implement add_to_template()")
 
 
 class ARecord(Record):
-
-    def __init__(self, name, value):
-
-        super(ARecord, self).__init__(name)
-        self.value = value
 
     def _is_ip(self, ip):
 
