@@ -72,13 +72,13 @@ class BaseStack(StackComponent):
         Args:
             key (str): The input key
             **kms (bool): if the input will be SMS KMS Encrypted parameter
-            **default (str): The default value. If None will throw error if not defined in infra context when deployed or queried as dependencie
+            **default (str): The default value. If None will throw error if not defined in infra context when deployed or queried as dependency
         Returns: void
-        """ # noqa
+        """  # noqa
 
         input_defs = {
-                'kms': False,
-                'default': None
+            'kms': False,
+            'default': None
         }
 
         input_defs.update(defs)
@@ -87,9 +87,8 @@ class BaseStack(StackComponent):
 
     def add_input_specs(self, inputs):
 
-        for key, defsin inputs.items():
+        for key, defs in inputs.items():
             self.add_input_spec(key, **defs)
-
 
     def _init_template(self):
 
