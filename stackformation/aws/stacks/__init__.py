@@ -63,6 +63,33 @@ class BaseStack(StackComponent):
         self.template_components = {}
         self._stack_info = None
         self.stack_inputs = {}
+        self._input_spec = {}
+
+    def add_input_spec(self, key, **defs):
+        """Add an input to the stack
+        The first {} will be keyed to the propery: self.stack_name
+
+        Args:
+            key (str): The input key
+            **kms (bool): if the input will be SMS KMS Encrypted parameter
+            **default (str): The default value. If None will throw error if not defined in infra context when deployed or queried as dependencie
+        Returns: void
+        """ # noqa
+
+        input_defs = {
+                'kms': False,
+                'default': None
+        }
+
+        input_defs.update(defs)
+
+        self._input_spec.update({key: input_defs})
+
+    def add_input_specs(self, inputs):
+
+        for key, defsin inputs.items():
+            self.add_input_spec(key, **defs)
+
 
     def _init_template(self):
 

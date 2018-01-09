@@ -63,4 +63,4 @@ target/
 
 # annoying files
 .DS_Store
-
+*swp
