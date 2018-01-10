@@ -86,7 +86,9 @@ mount -a
 
 class ECSJoinCluster(UserData):
 
-    def __init__(self, name, ecs_cluster):
+    def __init__(self, ecs_cluster):
+
+        name = "ECSJoin{}".format(ecs_cluster.name)
 
         super(ECSJoinCluster, self).__init__(name)
 
@@ -121,4 +123,4 @@ ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
 ECS_LOGLEVEL=info
 ECS_CLUSTER={{{{context('{0}')}}}}
 EOF
-""".format(self.ecs_cluster.output_ecs_cluster())  # noqa
+""".format(self.ecs_cluster.output_cluster())  # noqa
