@@ -53,7 +53,23 @@ class ASGStack(BaseStack):
         self.security_groups.append(sg)
 
     def add_user_data(self, ud):
-        self.add_template_component(ud)
+        self.add_template_component("UserData", ud)
+
+    def before_deploy(self, context, parameters):
+
+        ud_key = "{}UserData".format(self.stack_name)
+
+        if context.check_var(ud_key):
+
+            user_data = context.get_var(ud_key)
+
+            n = 4096
+
+            ud_list = [user_data[i:i + n] for i in range(0, len(user_data), n)]
+
+            for k, v in enumerate(ud_list):
+                varname = "{}{}".format(ud_key, k)
+                context.add_vars({varname: v})
 
     def output_asg(self):
         return "{}{}ASG".format(
@@ -149,15 +165,18 @@ class ASGStack(BaseStack):
             for sg in self.security_groups
         ]
 
-        user_data_refs = [
-            Ref(t.add_parameter(Parameter(
-                '{}UserData{}'.format(self.name, i),
-                Type='String',
-                Default=' ',
-                Description='{} UserData #{}'.format(self.name, i)
-            )))
-            for i in range(0, 4)
-        ]
+
+        # user data params
+        user_data = []
+        for i in range(0, 4):
+            user_data.append(
+                Ref(t.add_parameter(Parameter(
+                    '{}UserData{}'.format(self.stack_name, i),
+                    Type='String',
+                    Default=' ',
+                    Description='{} UserData #{}'.format(self.stack_name, i)
+                )))
+            )
 
         # subnet list
         if self.private_subnet:
@@ -204,7 +223,7 @@ class ASGStack(BaseStack):
                 "#!/bin/bash\n",
                 "exec > >(tee /var/log/user-data.log|logger ",
                 "-t user-data -s 2>/dev/console) 2>&1\n",
-            ] + user_data_refs + [
+            ] + user_data + [
                 "\n",
                 "\n",
                 "curl -L https://gist.github.com/ibejohn818",

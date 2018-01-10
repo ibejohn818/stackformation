@@ -27,15 +27,13 @@ class Cluster(object):
 
         t.add_output([
             Output(
-                "{}{}ECSCluster".format(
-                    self.stack.get_stack_name(),
+                "{}ECSCluster".format(
                     self.name
                 ),
                 Value=Ref(cluster)
             ),
             Output(
-                "{}{}ECSClusterArn".format(
-                    self.stack.get_stack_name(),
+                "{}ECSClusterArn".format(
                     self.name
                 ),
                 Value=GetAtt(cluster, 'Arn')
@@ -66,6 +64,12 @@ class ECSStack(BaseStack):
         cluster.stack = self
         self.clusters.append(cluster)
         return cluster
+
+    def find_cluster(self, name):
+
+        for i in self.clusters:
+            if name == i.name:
+                return i
 
     def build_template(self):
 
