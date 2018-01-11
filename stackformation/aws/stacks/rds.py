@@ -46,9 +46,9 @@ class RDSStack(BaseStack):
 
     def output_instance(self):
         return "{}{}RDS".format(
-                self.get_stack_name(),
-                self.stack_name
-                )
+            self.get_stack_name(),
+            self.stack_name
+        )
 
     def build_template(self):
 

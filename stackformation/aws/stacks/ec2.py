@@ -115,6 +115,17 @@ class EC2Stack(BaseStack):
 
         t = self._init_template()
 
+        # ami input + param
+        self.infra.add_var(
+            'Input{}EC2Ami'.format(self.stack_name),
+            self.ami
+        )
+
+        ami_param = t.add_parameter(Parameter(
+            'Input{}EC2Ami'.format(self.stack_name),
+            Type='String'
+        ))
+
         # tag Name
         tag_name = t.add_parameter(Parameter(
             "Input{}EC2TagName".format(self.stack_name),
@@ -221,7 +232,7 @@ class EC2Stack(BaseStack):
             Tags=Tags(
                 Name=Ref(tag_name)
             ),
-            ImageId=self.ami,
+            ImageId=Ref(ami_param),
             Volumes=volumes,
             InstanceType=Ref(instance_type),
             IamInstanceProfile=Ref(instance_profile_param),
