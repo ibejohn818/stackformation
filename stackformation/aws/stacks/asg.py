@@ -165,7 +165,6 @@ class ASGStack(BaseStack):
             for sg in self.security_groups
         ]
 
-
         # user data params
         user_data = []
         for i in range(0, 4):
