@@ -428,14 +428,11 @@ class BaseStack(StackComponent):
 
     def review(self, infra):
 
-        info = self.stack_info()
-
-        if not info:
-            return False
-
         review = {
-            'dependent_stacks': []
+            'dependent_stacks': [],
         }
+
+        review['info'] = self.stack_info()
 
         # get stack dependencies
         deps = infra.get_dependent_stacks(self)  # noqa
@@ -444,10 +441,16 @@ class BaseStack(StackComponent):
             info = v.stack_info()
             v.load_stack_outputs(self.infra)
             outputs = v.get_outputs()
+            params = {}
+            if info and info.get('Parameters'):
+                for p in info.get('Parameters'):
+                    params.update({p['ParameterKey']:
+                                   p['ParameterValue']})
             review['dependent_stacks'].append({
                 'stack': v,
                 'outputs': outputs,
-                'stack_info': info
+                'stack_info': info,
+                'parameters': params
             })
 
         context = self.infra.context
@@ -460,7 +463,8 @@ class BaseStack(StackComponent):
 
         self.before_deploy(context, parameters)
 
-        parameters = self.fill_params(parameters, context)
+        review['parameters'] = self.fill_params(parameters, context)
+        review['template_vars'] = template_vars
 
         return review
 

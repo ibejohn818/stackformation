@@ -12,6 +12,7 @@ import os
 import jinja2
 from colorama import Fore, Style
 import jmespath
+from textwrap import dedent
 
 INFRA_FILE = "stacks.py"
 
@@ -66,7 +67,7 @@ def images():
 
 
 @images.command(help="List images", name='list')
-def list_images():
+def images_list():
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -228,7 +229,7 @@ def images_prune(name, force):
 @click.argument('selector', nargs=-1)
 @click.option("--dependencies", "-d", is_flag=True, default=False)
 @click.option("--remote", "-r", is_flag=True, default=False)
-def list_stack(selector=None, dependencies=False, remote=False):
+def stacks_list(selector=None, dependencies=False, remote=False):
 
     if len(selector) <= 0:
         selector = None
@@ -284,12 +285,12 @@ def list_stack(selector=None, dependencies=False, remote=False):
                             rem, v.get_stack_name(), ty))
 
 
-@stacks.command(help='Deploy stacks')
+@stacks.command(help='Deploy stacks', name='review')
 @click.argument('selector', nargs=-1)
-def review(selector=None):
+def stacks_review(selector=None):
 
-    if len(selector) <= 0:
-        selector = None
+    if len(selector) >= 0:
+        selector = list(selector)
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -302,7 +303,95 @@ def review(selector=None):
             results.append(stack)
 
     for stack in results:
-        stack.review(infra)
+
+        wbs = utils.colors('w', True)
+        rsall = Style.RESET_ALL
+
+        click.echo("Stack Name: {}{}{}".format(
+            wbs,
+            stack.get_stack_name(),
+            rsall
+        ))
+
+        click.echo("Type: {}{}{}".format(
+            wbs,
+            type(stack).__name__,
+            rsall
+        ))
+        review = stack.review(infra)
+
+        dep_status = styled_bool(False)
+        if review['info']:
+            dep_status = styled_bool(True)
+
+        click.echo("Deploy Status: {}".format(dep_status))
+
+        if len(review['dependent_stacks']) <= 0:
+            click.echo("No dependent stacks")
+        else:
+            num_dependent = len(review['dependent_stacks'])
+            click.echo("Denpendent Stacks: {}".format(num_dependent))
+            click.echo("{} = Deployed | {} = Not Deployed".format(
+                styled_bool(True),
+                styled_bool(False)
+            ))
+            for v in review['dependent_stacks']:
+                if not v['stack_info']:
+                    deployed = False
+                    status = "Not Deployed"
+                else:
+                    deployed = True
+                    status = "Deployed"
+
+                click.echo("  {} {} ({})".format(
+                    styled_bool(deployed),
+                    v['stack'].get_stack_name(),
+                    type(v['stack']).__name__
+                ))
+
+        click.echo("")
+        click.echo("Parameter Review:")
+
+        if not review['info'] or not review['info'].get('Parameters'):  # noqa
+            params = {}
+        else:
+            params = {}
+            for v in review['info'].get('Parameters'):
+                params.update({v['ParameterKey']:
+                               v['ParameterValue']})
+
+        # define icons
+        nv = "{}?{}".format(
+            utils.colors('y', True),
+            Style.RESET_ALL
+        )
+        sv = styled_bool(True)
+        cv = styled_bool(False)
+
+        if len(review['parameters']) <= 0:
+            click.echo("No Parameters to review")
+        else:
+            click.echo(
+    "{} = New Value | {} = Changed Value | {} = No Change".format(
+         nv, cv, sv))  # noqa
+
+        for v in review['parameters']:
+            param_name = v['ParameterKey']
+            param_value = v['ParameterValue']
+            status = ""
+            if not params.get(param_name):
+                icon = nv
+            elif params.get(param_name) == param_value:
+                icon = sv
+            else:
+                icon = cv
+                status = "{}Previous Value: {}{} ".format(
+                    utils.colors('b', True),
+                    params.get(param_name),
+                    Style.RESET_ALL)
+            click.echo("{} {}: {}".format(icon, param_name, param_value))
+            if len(status) > 0:
+                click.echo(dedent(status))
 
 
 @stacks.command(help='Deploy stacks')
