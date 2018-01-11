@@ -111,7 +111,7 @@ class Infra(object):
         self.images = []
 
     def add_var(self, name, value):
-        return self.context.update({name: value})
+        return self.context.vars.update({name: value})
 
     def add_vars(self, inp_vars):
         return self.context.add_vars(inp_vars)

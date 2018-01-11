@@ -1,6 +1,5 @@
 from stackformation import (BaseStack)
 from stackformation.aws.stacks import (eip)
-from stackformation import utils
 import inflection
 import re
 from troposphere import route53
@@ -19,7 +18,7 @@ class Record(object):
         self.name = name
         self.ttl = str(3600)
         self.stack = None
-        self.weight = 900
+        self.weight = 0
         self.value = value
 
     def set_ttl(self, val):
@@ -28,8 +27,26 @@ class Record(object):
     def _safe_dns_name(self, name):
         return name.replace(".", "")
 
-    def _return_resource_param(self):
-        pass
+    def _return_resource_param(self, template):
+
+        param_type = ""
+        param_name = ""
+
+        if isinstance(self.value, eip.EIP):
+            param_name = self.value.output_eip()
+            param_type = "String"
+        elif self._is_ip(self.value):
+            input_name = "Input{}ARecordValue".format(self.stack.stack_name)
+            self.stack.infra.add_var({
+                input_name: self.value
+            })
+            param_name = input_name
+            param_type = "String"
+
+        return template.add_parameter(Parameter(
+            param_name,
+            Type=param_type
+        ))
 
     def add_to_template(self, template):
         raise Exception("must implement add_to_template()")
@@ -45,7 +62,7 @@ class ARecord(Record):
         return re.match(
             '^([0-9]){,3}(\.)([0-9]){,3}(\.)([0-9]){,3}(\.)([0-9]){,3}$', ip)
 
-    def add_to_template(self, t, zoneRecord):
+    def add_to_template(self, template, zoneRecord):
 
         record = route53.RecordSet(
             '{}ARecord'.format(self._safe_dns_name(self.name)),
@@ -55,21 +72,9 @@ class ARecord(Record):
             Weight=self.weight
         )
 
-        if self._is_ip(self.value):
-            record.ResourceRecords = [
-                self.value
-            ]
-        elif isinstance(self.value, (eip.EIP)):
-            iparam = utils.tparam(
-                t,
-                self.value.output_eip(),
-                'String',
-                "EIP for {}".format(
-                    self.name),
-                None)
-            record.ResourceRecords = [
-                Ref(iparam)
-            ]
+        param = self._return_resource_param(template)
+
+        record.ResourceRecords = [Ref(param)]
 
         return record
 
