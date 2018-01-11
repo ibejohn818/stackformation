@@ -17,6 +17,8 @@ def jinja_env(context, capture_vars=False):
         else:
             if context.check_var(var):
                 return context.get_var(var)
+            else:
+                return None
             raise Exception("Context Error: Output Missing ({})".format(var))
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="."))
