@@ -38,14 +38,6 @@ node {
         }
 
         if (env.BRANCH_NAME == "master") {
-            stage("Trigger Docker Latest Build") {
-                withCredentials([string(credentialsId: 'StackformationDockerHubBuildToken', variable: 'BUILD_TOKEN')]) {
-                    sh "curl -H 'Content-Type: application/json' --data '{\"source_type\": \"Branch\", \"source_name\": \"master\"}' -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/${env.BUILD_TOKEN}/"
-                }
-            }
-        }
-
-        if (env.BRANCH_NAME == "dockerhub-jenkins-push") {
             stage("Push latest to DockerHub") {
                 withCredentials([usernamePassword(credentialsId: '***REMOVED***', passwordVariable: 'PW', usernameVariable: 'UN')]) {
                     // Build Latest Tag
@@ -74,9 +66,13 @@ node {
                 }
 
             }
-            stage("Trigger Docker Hub Build") {
-                withCredentials([string(credentialsId: 'StackformationDockerHubBuildToken', variable: 'BUILD_TOKEN')]) {
-                    sh "curl -H 'Content-Type: application/json' --data '{\"source_type\": \"Tag\", \"source_name\": \"${env.TAG_NAME}\"}' -X POST https://registry.hub.docker.com/u/ibejohn818/stackformation/trigger/${env.BUILD_TOKEN}/"
+            stage("Push Tag to DockerHub") {
+                withCredentials([usernamePassword(credentialsId: '***REMOVED***', passwordVariable: 'PW', usernameVariable: 'UN')]) {
+                    // Build Latest Tag
+                    sh "docker build -t ibejohn818/stackformation:${env.TAG_NAME} ."
+                    echo "Push to docker hub"
+                    sh "docker login --username ${env.UN} --password ${env.PW}"
+                    sh "docker push ibejohn818/stackformation:${env.TAG_NAME}"
                 }
             }
         }
