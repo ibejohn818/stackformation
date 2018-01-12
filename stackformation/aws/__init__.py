@@ -339,7 +339,7 @@ class Ami(PackerImage):
 
         return super(Ami, self).generate()
 
-    def build(self, active=False):
+    def build(self, active=False, memo=''):
 
         self.generate()
 
@@ -380,7 +380,7 @@ class Ami(PackerImage):
             if len(ami_len) <= 0:
                 active = True
 
-        self.tag_ami([ami[1]])
+        self.tag_ami([ami[1]], memo)
 
         if active:
             logger.info("SETTING AMI TO ACTIVE:YES")
@@ -408,7 +408,7 @@ class Ami(PackerImage):
 
         return ids
 
-    def tag_ami(self, ami_ids):
+    def tag_ami(self, ami_ids, memo=''):
 
         ec2 = self.boto_session.client('ec2')
 
@@ -423,6 +423,12 @@ class Ami(PackerImage):
                 {'Key': 'STACKFORMATION', 'Value': 'STACKFORMATION'},
             ]
         }
+
+        if len(memo) > 0:
+            params['Tags'].append({
+                'Key': 'MEMO',
+                'Value': memo
+            })
 
         ec2.create_tags(**params)
 

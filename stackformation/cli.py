@@ -94,11 +94,14 @@ def images_list():
 
                 flag = ""
                 flag_style = Fore.CYAN
-
+                memo = None
                 for t in ami['Tags']:
                     if t['Key'] == 'ACTIVE':
                         flag = "(ACTIVE)"
                         flag_style = Fore.GREEN
+                    if t['Key'] == 'MEMO' and \
+                            len(t['Value']) > 0:
+                        memo = t['Value']
 
                 click.echo(
                     "  Date: {} {}AMI: {}{}{}".format(
@@ -107,7 +110,12 @@ def images_list():
                         ami['ImageId'],
                         flag,
                         Style.RESET_ALL))
-
+                if memo is not None:
+                    click.echo(
+                            "   {}Memo:{} {}".format(
+                                Style.BRIGHT,
+                                Style.RESET_ALL,
+                                memo))
 
 @images.command(help=HELP['image_ansible_config'], name='ansible-dir')
 @click.option("--ansible-roles", is_flag=True, default=False)
@@ -129,7 +137,8 @@ def ansible_dir(ansible_roles):
     default=False,
     help='Make image active')
 # @click.option("--yes","-y", is_flag=True, default=False, help="Force build")
-def images_build(name=None, active=False, ):
+@click.option('--memo', '-m', default='')
+def images_build(name=None, active=False, memo=''):
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -156,7 +165,7 @@ def images_build(name=None, active=False, ):
     click.confirm("Do you wish to build the matched images?", abort=True)
 
     for image in results:
-        image.build(active)
+        image.build(active, memo)
 
 
 @images.command(help="", name='activate')
