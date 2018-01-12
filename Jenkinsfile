@@ -84,6 +84,7 @@ node {
     } catch(Exception err) {
         currentBuild.result = "FAILURE"
     } finally {
+
         //def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
         //sh "docker rmi ${img_tag} --force"
     }
