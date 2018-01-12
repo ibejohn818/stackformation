@@ -9,7 +9,7 @@ import stackformation.utils as utils
 
 __author__ = """John Hardy"""
 __email__ = 'john@johnchardy.com'
-__version__ = '0.2.15'
+__version__ = '0.2.16'
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class Infra(object):
         self.images = []
 
     def add_var(self, name, value):
-        return self.context.update({name: value})
+        return self.context.vars.update({name: value})
 
     def add_vars(self, inp_vars):
         return self.context.add_vars(inp_vars)

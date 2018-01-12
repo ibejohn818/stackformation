@@ -25,7 +25,7 @@ def test_ecs_stack(test_infra):
 
     ecs_stack = test_infra.add_stack(ecs.ECSStack("test"))
 
-    cluster = ecs_stack.add_cluster(ecs.Cluster('test'))
+    cluster = ecs_stack.add_cluster('test')
 
     t = ecs_stack.build_template()
 

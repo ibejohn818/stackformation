@@ -60,7 +60,8 @@ class ECSStack(BaseStack):
         self.stack_name = name
         self.clusters = []
 
-    def add_cluster(self, cluster):
+    def add_cluster(self, cluster_name):
+        cluster = Cluster(cluster_name)
         cluster.stack = self
         self.clusters.append(cluster)
         return cluster
