@@ -51,7 +51,7 @@ node {
                     // Build Latest Tag
                     sh "docker build -t ibejohn818/stackformation:latest ."
                     echo "Push to docker hub"
-                    sh "docker login --login ${env.UN} --password ${env.PW}"
+                    sh "docker login --username ${env.UN} --password ${env.PW}"
                     sh "docker push ibejohn818/stackformation:latest"
                 }
             }
