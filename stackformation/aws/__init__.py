@@ -33,7 +33,7 @@ AMI_INFO = {
         'ami_filters': [
             {
                 'Name': 'name',
-                'Values': ['ubuntu*16*']
+                'Values': ['Ubuntu*16*']
             },
         ]
     },
