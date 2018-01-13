@@ -167,12 +167,13 @@ def colors(flavor=None, bright=None):
         'y': Fore.YELLOW,
         'b': Fore.CYAN,
         'r': Fore.RED,
-        'w': Fore.WHITE
+        'w': Fore.WHITE,
+        'p': Fore.MAGENTA,
     }
 
     res = [Style.RESET_ALL]
 
-    if bright is not None:
+    if bright is True:
         res.append(Style.BRIGHT)
 
     if flavor is not None:

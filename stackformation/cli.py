@@ -62,12 +62,12 @@ def stacks():
 
 
 @main.group()
-def images():
+def ami():
     pass
 
 
-@images.command(help="List images", name='list')
-def images_list():
+@ami.command(help="List images", name='list')
+def ami_list():
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -104,7 +104,7 @@ def images_list():
                         memo = t['Value']
 
                 click.echo(
-                    "  Date: {} {}AMI: {}{}{}".format(
+                    "  Date: {} {}AMI: {} {}{}".format(
                         ami['CreationDate'],
                         flag_style,
                         ami['ImageId'],
@@ -112,12 +112,13 @@ def images_list():
                         Style.RESET_ALL))
                 if memo is not None:
                     click.echo(
-                            "   {}Memo:{} {}".format(
-                                Style.BRIGHT,
-                                Style.RESET_ALL,
-                                memo))
+                        "     {}Memo:{} {}".format(
+                            Style.BRIGHT,
+                            Style.RESET_ALL,
+                            memo))
 
-@images.command(help=HELP['image_ansible_config'], name='ansible-dir')
+
+@ami.command(help=HELP['image_ansible_config'], name='ansible-dir')
 @click.option("--ansible-roles", is_flag=True, default=False)
 def ansible_dir(ansible_roles):
 
@@ -128,7 +129,7 @@ def ansible_dir(ansible_roles):
     click.echo(dir_name)
 
 
-@images.command(help=HELP['images_build'], name='build')
+@ami.command(help=HELP['images_build'], name='build')
 @click.argument("name", default="")
 @click.option(
     '--active',
@@ -138,7 +139,7 @@ def ansible_dir(ansible_roles):
     help='Make image active')
 # @click.option("--yes","-y", is_flag=True, default=False, help="Force build")
 @click.option('--memo', '-m', default='')
-def images_build(name=None, active=False, memo=''):
+def ami_build(name=None, active=False, memo=''):
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -168,10 +169,10 @@ def images_build(name=None, active=False, memo=''):
         image.build(active, memo)
 
 
-@images.command(help="", name='activate')
+@ami.command(help="", name='activate')
 @click.argument("name", required=True)
 @click.option('--id', required=True)
-def images_activate(name, id):
+def ami_activate(name, id):
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -196,11 +197,11 @@ def images_activate(name, id):
     click.echo("{} Now active".format(id))
 
 
-@images.command(help="", name='prune')
+@ami.command(help="", name='prune')
 @click.argument("name", required=True)
 @click.option('--force', is_flag=True, default=False,
               help="Force deletion of active AMI")
-def images_prune(name, force):
+def ami_prune(name, force):
 
     infra = utils.load_infra_module(INFRA_FILE).infra
 
@@ -291,7 +292,12 @@ def stacks_list(selector=None, dependencies=False, remote=False):
                     ty = type(v).__name__
                     click.echo(
                         "  {} {} ({})".format(
-                            rem, v.get_stack_name(), ty))
+                            rem,
+                            utils.colors(
+                                'p') +
+                            v.get_stack_name() +
+                            Style.RESET_ALL,
+                            ty))
 
 
 @stacks.command(help='Deploy stacks', name='review')
