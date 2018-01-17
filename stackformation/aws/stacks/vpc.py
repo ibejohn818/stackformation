@@ -187,6 +187,34 @@ class AllPortsSecurityGroup(SecurityGroup):
 
 
 class VPCStack(BaseStack, SoloStack):
+    """The VPC Stack will create the VPC and public/private
+    subnet for each AZ (Based on the number of AZ's specified ).
+    In addition, a routetable for public-subnets and a routetable
+    for private-subnets will be created.
+
+    Public Subnet = Subnet with routetable that routes
+    all traffic to an internet gateway and has 'allocate_public_ip'
+    set to True.
+    Private Subnet = Subnet with routetable that does not
+    route all traffic to an internet gateway. In the case
+    a Nat-Gateway is chosen, egress traffic only will be routed
+    thorugh the Nat-Gateway.
+
+    The VPC Base CIDR will be a /16 and each subnet /23
+
+    A single ACL table will be created with default rules
+    The default rules will allow all traffic and ephermaal
+    port in/out of the VPC. You can overwrite these default
+    rules to be more specific.
+
+    # TODO(john@johnchardy.com): create methods to create custom ACL tables
+    and methods to associate them with subnets
+
+    Security groups are also created in the VPC stack.
+
+    # TODO(john@johnchardy.com): Create SecurityGroup and
+    Routes/Acls stacks for large VPC with many resources
+    """
 
     def __init__(self, name=""):
 
@@ -194,10 +222,13 @@ class VPCStack(BaseStack, SoloStack):
 
         self.stack_name = name
         self.security_groups = []
-        self.base_cidr = "10.0"
-        self.enable_dns = True,
-        self.enable_dns_hostnames = True
         self.nat_eip = None
+        self.enable_dns = True,
+        # str: the base cidr of the VPC. Will use /16 (Class B)
+        self.base_cidr = "10.0"
+        # bool: enable internal DNS Hostname resolution. Default is True
+        self.enable_dns_hostnames = True
+        # bool: add nat-gateway to private subnets and private routetable
         self.nat_gateway = False
         self._num_azs = 2
 
