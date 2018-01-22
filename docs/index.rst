@@ -1,5 +1,5 @@
 Welcome to StackFormation's documentation!
-======================================
+==========================================
 
 Contents:
 
