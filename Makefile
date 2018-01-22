@@ -77,8 +77,7 @@ coverage-term: clean flake8 ## test coverage terminal report ( Docker )
 
 coverage-html: clean flake8 ## test coverage html report ( Docker )
 	docker build -f Dockerfile-test -t stackformation:test .
-	docker run --rm -it -u $(shell id -u):$(shell id -g) \
-		-v /etc/passwd:/etc/passwd \
+	docker run --rm -it \
 		-v $(shell pwd):$(shell pwd) -w \
 		$(shell pwd) stackformation:test python3 setup.py covhtml
 	$(BROWSER) htmlcov/index.html
