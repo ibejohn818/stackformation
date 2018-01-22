@@ -1,4 +1,4 @@
-from stackformation.aws.stack import (BaseStack)
+from stackformation.aws.stacks import (BaseStack)
 
 
 class ENI(object):
