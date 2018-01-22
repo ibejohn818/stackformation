@@ -39,7 +39,9 @@ class SecurityGroup(object):
 
 
 class SelfReferenceSecurityGroup(SecurityGroup):
-
+    """Self Referenced security group. Will allow full access
+    to resources which share this security group
+    """
     def __init__(self):
         name = "SelfReferenceSecurityGroup"
         super(SelfReferenceSecurityGroup, self).__init__(name)
@@ -230,7 +232,8 @@ class VPCStack(BaseStack, SoloStack):
         self.enable_dns_hostnames = True
         # bool: add nat-gateway to private subnets and private routetable
         self.nat_gateway = False
-        self._num_azs = 2
+        # int: the number of availability zones to build into the VPC
+        self.num_azs = 2
 
         self.route_tables = {
             'private': [],
@@ -250,15 +253,6 @@ class VPCStack(BaseStack, SoloStack):
         self.add_default_acl("SSH", 22, 22, 6, 'false', 103)
         self.add_default_acl("EPHEMERAL", 49152, 65535, 6, 'false', 104)
         self.add_default_acl("ALLIN", None, None, 6, 'true', 100)
-
-    @property
-    def num_azs(self):
-        return self._num_azs
-
-    @num_azs.setter
-    def num_azs(self, value):
-        self._num_azs = value
-        return self.num_azs
 
     def add_default_acl(
             self,
@@ -289,6 +283,11 @@ class VPCStack(BaseStack, SoloStack):
         self.nat_eip = nat_eip
 
     def add_security_group(self, secgroup):
+        """Add security group to VPC
+
+        Args:
+            secgroup (:obj:`stackformation.aws.stacks.vpc.SecurityGroup`): Security Group to add to VPC
+        """ # noqa
 
         if not isinstance(secgroup, SecurityGroup):
             raise Exception("Security group must extend SecGroup")
