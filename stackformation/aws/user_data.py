@@ -84,6 +84,25 @@ mount -a
         """.format(self.ebs_volume.name, self.path)  # noqa
 
 
+class InstallSSMAgent(UserData):
+    """Install the SSM Agent
+    """
+    def __init__(self):
+        super(InstallSSMAgent, self).__init__("InstallSSMAgent")
+
+    def render(self):
+        return """
+        if [ -d /etc/yum.repos.d ]; then
+            yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+        else
+            cd /tmp
+            wget https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb
+            dpkg -i amazon-ssm-agent.deb
+            systemctl enable amazon-ssm-agent
+        fi
+""" # noqa
+
+
 class ECSJoinCluster(UserData):
 
     def __init__(self, ecs_cluster):

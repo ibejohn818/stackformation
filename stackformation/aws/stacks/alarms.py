@@ -1,4 +1,5 @@
 from stackformation.aws.stacks import (BaseStack, SoloStack)
+import stackformation
 import troposphere.cloudwatch as alarm
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
@@ -38,6 +39,17 @@ class CustomAlarm(Alarm):
 
 class ELBAlarm(Alarm):
     pass
+
+
+class EBSFailAlarm(Alarm):
+
+    def __init__(self, ebs_volume):
+
+        name = "EBSFailAlarm{}".format(ebs_volume.name)
+        super(EBSFailAlarm, self).__init__(name)
+        if not isinstance(ebs_volume, (stackformation.aws.stacks.ebs.EBSVolume)): # noqa
+            raise Exception("Invalid EBS Volume")
+        self.ebs_volume = ebs_volume
 
 
 class ELBHealthyHostsAlarm(ELBAlarm):

@@ -164,7 +164,7 @@ class EC2Profile(IAMRole):
 
     def __init__(self, name):
         super(EC2Profile, self).__init__(
-            "{}EC2".format(name)
+                name
         )
         self.principals = [
             "ec2.amazonaws.com", "ssm.amazonaws.com"
@@ -327,11 +327,11 @@ class S3ReadBucketAccess(IAMPolicy):
                     aws.Statement(
                         Effect=aws.Allow,
                         Action=[
-                            awacs.s3.GetObject,
-                            awacs.s3.ListBucket,
-                            awacs.s3.ListBucketVersions,
                             awacs.aws.Action('s3', 'GetObject*'),
-                            awacs.aws.Action('s3', 'ListAllMyBuckets')
+                            awacs.aws.Action('s3', 'ListAllMyBuckets'),
+                            awacs.aws.Action('s3', 'GetObject'),
+                            awacs.aws.Action('s3', 'ListBucket'),
+                            awacs.aws.Action('s3', 'ListBucketVersions'),
                         ],
                         Resource=[
                             Join("", ["arn:aws:s3:::", Ref(i), "/*"])
@@ -341,11 +341,11 @@ class S3ReadBucketAccess(IAMPolicy):
                     aws.Statement(
                         Effect=aws.Allow,
                         Action=[
-                            awacs.s3.GetObject,
-                            awacs.s3.ListBucket,
-                            awacs.s3.ListBucketVersions,
                             awacs.aws.Action('s3', 'GetObject*'),
-                            awacs.aws.Action('s3', 'ListAllMyBuckets')
+                            awacs.aws.Action('s3', 'ListAllMyBuckets'),
+                            awacs.aws.Action('s3', 'GetObject'),
+                            awacs.aws.Action('s3', 'ListBucket'),
+                            awacs.aws.Action('s3', 'ListBucketVersions'),
                         ],
                         Resource=[
                             Join("", ["arn:aws:s3:::", Ref(i), "*"])
@@ -370,11 +370,11 @@ class CloudWatchLogs(IAMPolicy):
                         Effect=aws.Allow,
                         Resource=['*'],
                         Action=[
-                            awacs.logs.PutLogEvents,
-                            awacs.logs.PutMetricFilter,
-                            awacs.logs.CreateLogGroup,
-                            awacs.logs.CreateLogStream,
-                            awacs.logs.DescribeLogStreams,
+                            aws.Action("logs", "PutLogEvents"),
+                            aws.Action("logs", "PutMetricFilter"),
+                            aws.Action("logs", "CreateLogGroup"),
+                            aws.Action("logs", "CreateLogStream"),
+                            aws.Action("logs", "DescribeLogStream"),
                         ]
                     )
                 ]
