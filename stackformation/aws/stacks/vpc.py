@@ -1,6 +1,8 @@
 from stackformation.aws.stacks import BaseStack, SoloStack
 from stackformation.aws.stacks import (eip)
-from troposphere import ec2
+from troposphere import (ec2, iam) # noqa
+import awacs # noqa
+from awacs import aws # noqa
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
@@ -42,6 +44,7 @@ class SelfReferenceSecurityGroup(SecurityGroup):
     """Self Referenced security group. Will allow full access
     to resources which share this security group
     """
+
     def __init__(self):
         name = "SelfReferenceSecurityGroup"
         super(SelfReferenceSecurityGroup, self).__init__(name)
@@ -287,7 +290,7 @@ class VPCStack(BaseStack, SoloStack):
 
         Args:
             secgroup (:obj:`stackformation.aws.stacks.vpc.SecurityGroup`): Security Group to add to VPC
-        """ # noqa
+        """  # noqa
 
         if not isinstance(secgroup, SecurityGroup):
             raise Exception("Security group must extend SecGroup")
@@ -574,3 +577,117 @@ class VPCStack(BaseStack, SoloStack):
 
     def output_vpc(self):
         return "{}VpcId".format(self.get_stack_name())
+
+
+class VPCPeeringStack(BaseStack):
+    """Create VPC Peering connections
+    """
+
+    def __init__(self, name=""):
+
+        self.stack_name = name
+        super(VPCPeeringStack, self).__init__('VPCPeering', 30)
+
+        self.vpc_peers = []
+        self.outputs = {}
+
+    def add_peering(self, from_vpc, to_vpc, add_role=False):
+        """Add VPC's to peer
+        """
+
+        peer = {
+            'from_vpc': from_vpc,
+            'to_vpc': to_vpc,
+        }
+
+        # for stack in peer.items():
+        # if not isinstance(stack, (VPCStack)):
+        # raise Exception("Stack must be VPCStack: {}".format(stack.__name__))
+
+        self.vpc_peers.append(peer)
+
+        return peer
+
+    def get_connection_output(self, from_vpc, to_vpc):
+        output_name = "{}{}{}VpcPeerConn".format(
+            self.get_stack_name(),
+            from_vpc.from_vpc.get_stack_name(),
+            to_vpc.to_vpc.get_stack_name()
+        )
+        return output_name
+
+    def build_template(self):
+
+        t = self._init_template()
+
+        for peers in self.vpc_peers:
+            # create iam role
+            # if peers.add_role is True:
+                # role = t.add_resource(iam.Role(
+                    # "VPCPeerRole{}To{}".format(
+                        # peers.from_stack.get_stack_name(),
+                        # peers.to_stack.get_stack_name()
+                    # ),
+                    # AssumeRolePolicyDocument=aws.Policy(
+                        # Statement=[
+                            # aws.Statement(
+                                # Action=[awacs.sts.AssumeRole],
+                                # Effect=aws.Allow,
+                                # Principal=aws.Principal(
+                                    # "Service", ["lambda.amazonaws.com"])
+                            # )
+                        # ]
+                    # ),
+                    # Path="/",
+                    # Policies=[
+
+                    # ],
+                    # ManagedProlicyArns=[
+                    # ]
+                # ))
+
+            to_param = t.add_parameter(Parameter(
+                peers['to_vpc'].output_vpc(),
+                Type='String'
+            ))
+            from_param = t.add_parameter(Parameter(
+                peers['from_vpc'].output_vpc(),
+                Type='String'
+            ))
+
+            conn = t.add_resource(ec2.VPCPeeringConnection(
+                "VPCPeer{}to{}".format(
+                    peers['from_vpc'].get_stack_name(),
+                    peers['to_vpc'].get_stack_name()
+                ),
+                VpcId=Ref(from_param),
+                PeerVpcId=Ref(to_param),
+                Tags=Tags(
+                    Name='VPCPeer{}To{}'.format(
+                        peers['from_vpc'].get_stack_name(),
+                        peers['to_vpc'].get_stack_name()
+                    )
+                )
+            ))
+
+            output_name = "{}{}{}VpcPeerConn".format(
+                self.get_stack_name(),
+                peers['from_vpc'].get_stack_name(),
+                peers['to_vpc'].get_stack_name()
+            )
+
+            t.add_output(Output(
+                output_name,
+                Value=Ref(conn)
+            ))
+
+        return t
+
+
+class VPCRoutesStack(BaseStack):
+    """Create additional VPC Routes
+    """
+
+    def __init__(self, name=""):
+        self.stack_name = name
+        super(VPCRoutesStack, self).__init__('VPCRoutes', 31)
