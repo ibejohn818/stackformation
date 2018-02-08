@@ -9,6 +9,7 @@ import troposphere
 import inflection
 import botocore
 from colorama import Fore, Style, Back  # noqa
+from troposphere import (Parameter)
 
 logger = logging.getLogger(__name__)
 
@@ -484,6 +485,28 @@ class BaseStack(StackComponent):
                 self._stack_info = False
 
         return self._stack_info
+
+    def ensure_param(
+            self,
+            template,
+            param_name,
+            param_type='String',
+            description='',
+            default_value=''):
+
+        if param_name in template.parameters:
+            return template.parameters[param_name]
+
+        param = template.add_parameter(Parameter(
+                param_name,
+                Type=param_type,
+                Description=description
+                ))
+
+        if len(default_value) > 0:
+            param.Default = default_value
+
+        return param
 
     def build_template(self):
         raise NotImplementedError("Must implement method to extend Stack")

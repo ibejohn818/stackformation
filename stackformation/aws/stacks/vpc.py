@@ -646,14 +646,16 @@ class VPCPeeringStack(BaseStack):
                     # ]
                 # ))
 
-            to_param = t.add_parameter(Parameter(
+            to_param = self.ensure_param(
+                t,
                 peers['to_vpc'].output_vpc(),
-                Type='String'
-            ))
-            from_param = t.add_parameter(Parameter(
+                'String'
+            )
+            from_param = self.ensure_param(
+                t,
                 peers['from_vpc'].output_vpc(),
-                Type='String'
-            ))
+                'String'
+            )
 
             conn = t.add_resource(ec2.VPCPeeringConnection(
                 "VPCPeer{}to{}".format(
@@ -688,6 +690,45 @@ class VPCRoutesStack(BaseStack):
     """Create additional VPC Routes
     """
 
-    def __init__(self, name=""):
+    def __init__(self, name, vpc_stack):
         self.stack_name = name
         super(VPCRoutesStack, self).__init__('VPCRoutes', 31)
+        self.vpc_stack = vpc_stack
+        self.routes = []
+
+    def add_route(self, routetable, destination, target, order):
+        """Add route to routetable
+        """
+        route = {
+                'routetable': routetable,
+                'destination': destination,
+                'target': target,
+                'order': order
+            }
+
+        self.routes.append(route)
+
+        return route
+
+
+    def build_template(self):
+
+        t = self._init_template()
+
+        # for route in self.routes:
+
+            # rt_param = self.ensure_param(
+                    # t,
+                    # route.routetable,
+                    # 'String'
+                    # )
+
+            # target_param = self.ensure_param(
+                    # t,
+                    # target,
+                    # Type='String'
+                    # )
+
+            # res = t.add_resource(ec2.Route(
+
+        return t
