@@ -15,7 +15,8 @@ CWD = os.path.realpath(os.path.dirname(stackformation.__file__)).strip('/')
 
 ANSIBLE_INSTALL = {
     'ubuntu': [
-        'sudo apt-get update',
+        'sudo rm /var/lib/dpkg/lock',
+        'sudo apt-get update ',
         'sudo apt-get install -y ansible'
     ],
     'awslinux': [
