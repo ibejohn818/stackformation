@@ -53,7 +53,8 @@ class BotoSession():
         return self._session
 
     def client(self, client):
-        return self.session.client(client)
+        conf = {}
+        return self.session.client(client, **conf)
 
 
 class Context(object):
