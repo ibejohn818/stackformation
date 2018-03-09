@@ -63,6 +63,7 @@ class BaseStack(StackComponent):
         self.template_components = {}
         self._stack_info = None
         self.stack_inputs = {}
+        self._deploying = False
 
     def _init_template(self):
 
@@ -219,7 +220,9 @@ class BaseStack(StackComponent):
 
         env = utils.jinja_env(context)
 
+        self._deploying = True
         template = self.build_template()
+        self._deploying = False
         parameters = self.get_parameters()
         template_vars = self.render_template_components(env[0], context)  # noqa
 
@@ -352,6 +355,7 @@ class BaseStack(StackComponent):
                         self.get_stack_name()))
 
             if status.endswith('_COMPLETE'):
+                self._deploying = False
                 return False
             else:
                 time.sleep(3)
