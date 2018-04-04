@@ -35,7 +35,8 @@ class BaseLambda(BaseStack):
         self.tmp_folder = kwargs.get('tmp_folder', '_code')
         self.s3_bucket = kwargs.get('s3_bucket', None)
         self.code_hash = None
-        self.s3_hash = None
+        self.s3_hash = False
+        self.s3_version = False
         self.uploaded = False
 
 
@@ -56,7 +57,7 @@ class BaseLambda(BaseStack):
         return self.code_hash
 
     def _s3_code_hash(self):
-        if self.s3_hash:
+        if self.s3_hash and self.s3_version:
             return self.s3_hash
 
         if not self._bucket_name():
@@ -67,13 +68,12 @@ class BaseLambda(BaseStack):
                 Bucket=self._bucket_name(),
                 Key=self.zip_name
                 )
-            if obj.get('Metadata'):
-                return obj['Metadata']['code256sum']
-            else:
-                return False
+            self.s3_version = obj['VersionId']
+            self.s3_hash = obj['Metadata']['code256sum']
+            return True
 
         except Exception as e:
-            return False
+            return False, False
 
 
     def _upload_zip(self):
@@ -81,7 +81,6 @@ class BaseLambda(BaseStack):
             code_hash = self._code_hash()
             with open(os.path.join(self.zip_path, self.zip_name), 'rb') as f:
                 logger.info("Uploading zip...")
-                s3_key = "{}-{}".format(self.zip_name, str(time.time()).replace('.',''))
                 self.s3().put_object(
                     Bucket=self._bucket_name(),
                     Key=self.zip_name,
@@ -90,19 +89,18 @@ class BaseLambda(BaseStack):
                         'code256sum': code_hash
                     }
                     )
-                f.close()
-                self.s3().copy_object(
-                        Bucket=self._bucket_name(),
-                        Key=s3_key,
-                        CopySource={
-                            'Bucket':self._bucket_name(),
-                            'Key':self.zip_name
-                        }
-                        )
+                self.s3_hash = False
+                self.s3_version = False
                 self.uploaded = True
-                return s3_key
         except Exception as e:
             raise e
+
+    def _determine_code_versions(self):
+        self._s3_code_hash()
+        if not self.s3_hash or \
+                self._code_hash() != self.s3_hash:
+            self._upload_zip()
+            self._s3_code_hash()
 
     def _prune_uploads(self):
         pass
@@ -149,8 +147,6 @@ class LambdaStack(BaseLambda):
 
         t = self._init_template()
 
-        self.vars.update({'stackver': str(time.time()).replace(".","")})
-
         role_param = t.add_parameter(Parameter(
             self.role.output_role_arn(),
             Type='String'
@@ -162,15 +158,9 @@ class LambdaStack(BaseLambda):
 
         if self._deploying:
             if not self.uploaded and self._bucket_name():
-                code_hash = self._code_hash()
-                s3_hash = self._s3_code_hash()
-                if not s3_hash or \
-                        code_hash != s3_hash:
-                    s3_key = self._upload_zip()
-                    self.zip_name = s3_key
+                self._determine_code_versions()
+                logger.info("S3 Key: {}".format(self.zip_name))
 
-
-        logger.info("S3 Key: {}".format(self.zip_name))
         func = t.add_resource(awslambda.Function(
             '{}Function'.format(self.get_stack_name()),
             FunctionName=self.get_stack_name(),
@@ -183,16 +173,28 @@ class LambdaStack(BaseLambda):
             ),
             Code=awslambda.Code(
                 S3Bucket=Ref(bucket_ref),
-                S3Key=self.zip_name,
-                S3ObjectVersion=Ref("AWS::NoValue")
+                S3Key=self.zip_name
             )
         ))
 
-        # func_ver = t.add_resource(awslambda.Version(
-            # '{}Version'.format(self.get_stack_name()),
-            # FunctionName=Ref(func),
-            # CodeSha256=self._code_hash()
-            # ))
+        if self.s3_version:
+            func.Code.S3ObjectVersion = self.s3_version
 
+        t.add_output([
+            Output(
+                'FunctionName',
+                Value=Ref(func)
+            ),
+            Output(
+                'FunctionArn',
+                Value=GetAtt(func, "Arn")
+            )
+        ])
 
         return t
+
+    def output_func_name(self):
+        return '{}FunctionName'.format(self.get_stack_name())
+
+    def output_func_arn(self):
+        return '{}FunctionArn'.format(self.get_stack_name())

@@ -17,6 +17,12 @@ class SwaggerApiStack(BaseStack):
 
         super(SwaggerApiStack, self).__init__("SwaggerApiStack", 600)
         self.stack_name = stack_name
+        
 
+    def build_template(self):
 
-    
+        t = self._init_template()
+
+        
+
+        return t

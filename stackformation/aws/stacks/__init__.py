@@ -236,6 +236,9 @@ class BaseStack(StackComponent):
             'Parameters': parameters,
             'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
         }
+        # import json
+        # print(json.dumps(dep_kw, indent=True))
+        # exit(1)
 
         try:
             if present:

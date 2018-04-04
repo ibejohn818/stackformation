@@ -54,7 +54,7 @@ class RDSStack(BaseStack):
 
         t = self._init_template()
 
-        username = "rdsamdin"
+        username = "dbadmin"
         passwd = "rdspasswd"
 
         instance_type = t.add_parameter(Parameter(
@@ -82,6 +82,8 @@ class RDSStack(BaseStack):
         ))
 
         sn_list = self.vpc.output_private_subnets()
+        if self.public:
+            sn_list = self.vpc.output_public_subnets()
 
         subnet_refs = [
             Ref(
