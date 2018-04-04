@@ -54,6 +54,15 @@ class S3Bucket(BaseS3Bucket):
         if self.public_read:
             s3b.AccessControl = s3.PublicRead
 
+        versioning = "Suspended"
+
+        if self.versioning:
+            versioning = "Enabled"
+
+        s3b.VersioningConfiguration = s3.VersioningConfiguration(
+            Status=versioning
+        )
+
         t.add_output([
             Output(
                 "{}BucketName".format(self.name),
@@ -68,6 +77,12 @@ class S3Bucket(BaseS3Bucket):
         ])
 
         return s3b
+
+class LambdaCodeBucket(S3Bucket):
+
+    def __init__(self, name):
+        super(LambdaCodeBucket, self).__init__(name)
+        self.versioning = True
 
 
 class S3Stack(BaseStack):
