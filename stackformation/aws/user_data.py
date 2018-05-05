@@ -103,6 +103,24 @@ class InstallSSMAgent(UserData):
 """ # noqa
 
 
+class InstallCodeDeployAgent(UserData):
+
+    def __init__(self, stack):
+        self.stack = stack
+        super(InstallCodeDeployAgent, self).__init__('InstallCodeDeployAgent')
+
+    def render(self):
+        # get the region from the stacks infra
+        region = self.stack.infra.boto_session.get_conf('region_name')
+        return """
+        wget https://aws-codedeploy-%s.s3.amazonaws.com/latest/install -O /tmp/cd-install
+        chmod +x /tmp/cd-install
+        /tmp/cd-install auto
+""" % (region)
+
+
+
+
 class ECSJoinCluster(UserData):
 
     def __init__(self, ecs_cluster):
