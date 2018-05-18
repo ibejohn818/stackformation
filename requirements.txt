@@ -1,4 +1,4 @@
-boto3==1.7.22
+boto3==1.7.24
 Click==6.7
 troposphere==2.2.1
 awacs==0.7.2
