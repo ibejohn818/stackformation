@@ -6,7 +6,9 @@ from troposphere import (  # noqa
     GetAZs, Export
 )
 import troposphere.s3 as s3
+import logging
 
+logger = logging.getLogger(__name__)
 
 class BaseS3Bucket(object):
 
@@ -102,6 +104,19 @@ class S3Stack(BaseStack):
     def find_bucket(self, clazz, name=None):
 
         return self.find_class_in_list(self.buckets, clazz, name)
+
+    def before_destroy(self, infra, ctx):
+        self.load_stack_outputs(infra)
+        # iterate all buckets and delete all objects
+        s3 = infra.boto_session.resource('s3')
+        for bkt in self.buckets:
+            bucket_name = infra.get_var(bkt.output_bucket_name())
+            logger.info("Clearing bucket: {}".format(bucket_name))
+            try:
+                bucket = s3.Bucket(bucket_name)
+                bucket.objects.all().delete()
+            except Exception as e:
+                logger.info(str(e))
 
     def build_template(self):
 
