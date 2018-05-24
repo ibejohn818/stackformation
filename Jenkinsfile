@@ -71,12 +71,12 @@ node {
                     //sleep to allow pypi to register the new version so we can install
                     echo "Sleeping for pypi to register latest tag"
                     sleep(25)
-                    echo "Building tagged container image"
-                    // Build Latest Tag
-                    sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:${env.TAG_NAME} ."
-                    echo "Push to docker hub Tagged"
-                    sh "docker login --username ${env.UN} --password ${env.PW}"
-                    sh "docker push ibejohn818/stackformation:${env.TAG_NAME}"
+                    //echo "Building tagged container image"
+                    //// Build Latest Tag
+                    //sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:${env.TAG_NAME} ."
+                    //echo "Push to docker hub Tagged"
+                    //sh "docker login --username ${env.UN} --password ${env.PW}"
+                    //sh "docker push ibejohn818/stackformation:${env.TAG_NAME}"
                     // Build the tagged and push as latest
                     sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:latest ."
                     echo "Push to docker hub as latest"
