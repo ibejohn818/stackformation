@@ -41,10 +41,10 @@ node {
             stage("Push latest to DockerHub") {
                 withCredentials([usernamePassword(credentialsId: 'ibejohn818Dockerhub', passwordVariable: 'PW', usernameVariable: 'UN')]) {
                     // Build Latest Tag
-                    sh "docker build -t ibejohn818/stackformation:latest ."
+                    sh "docker build -t ibejohn818/stackformation:master ."
                     echo "Push to docker hub"
                     sh "docker login --username ${env.UN} --password ${env.PW}"
-                    sh "docker push ibejohn818/stackformation:latest"
+                    sh "docker push ibejohn818/stackformation:master"
                 }
             }
         }
@@ -70,9 +70,14 @@ node {
                 withCredentials([usernamePassword(credentialsId: 'ibejohn818Dockerhub', passwordVariable: 'PW', usernameVariable: 'UN')]) {
                     // Build Latest Tag
                     sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:${env.TAG_NAME} ."
-                    echo "Push to docker hub"
+                    echo "Push to docker hub Tagged"
                     sh "docker login --username ${env.UN} --password ${env.PW}"
                     sh "docker push ibejohn818/stackformation:${env.TAG_NAME}"
+                    // Build the tagged and push as latest
+                    sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:latest ."
+                    echo "Push to docker hub as latest"
+                    sh "docker login --username ${env.UN} --password ${env.PW}"
+                    sh "docker push ibejohn818/stackformation:latest"
                 }
             }
         }
