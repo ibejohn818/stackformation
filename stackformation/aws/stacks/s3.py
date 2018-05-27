@@ -20,6 +20,10 @@ class BaseS3Bucket(object):
         self.versioning = False
         self.public_read = False
         self.stack = None
+        self.cors_rules = []
+
+    def add_cors_rules(self, **kwargs):
+        pass
 
     def set_public_read(self, val):
         self.public_read = val
@@ -42,9 +46,14 @@ class BaseS3Bucket(object):
 
 class S3Bucket(BaseS3Bucket):
 
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
 
         super(S3Bucket, self).__init__(name)
+        self.website_mode = kwargs.get('website_mode', False)
+        self.website_config = {
+            'IndexDocument': 'index.html',
+            'ErrorDocument': 'error.html'
+        }
 
     def _build_template(self, template):
 
@@ -64,6 +73,9 @@ class S3Bucket(BaseS3Bucket):
         s3b.VersioningConfiguration = s3.VersioningConfiguration(
             Status=versioning
         )
+
+        if self.website_mode:
+            s3b.WebsiteConfiguration  = s3.WebsiteConfiguration(**self.website_config)
 
         t.add_output([
             Output(
