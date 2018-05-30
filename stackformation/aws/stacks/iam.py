@@ -242,6 +242,24 @@ class ELBFullAccess(IAMPolicy):
         ))
 
 
+class DynamoAll(IAMPolicy):
+
+    def _bind_role(self, t, r):
+        r.Policies.append(iam.Policy(
+            'dynamoall',
+            PolicyName='dynamoall',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Action=[awacs.aws.Action("dynamodb", "*")],
+                        Effect=aws.Allow,
+                        Resource=["*"]
+                    )
+                ]
+            )
+        ))
+
+
 class S3FullBucketAccess(IAMPolicy):
 
     def __init__(self, bucket):
@@ -283,6 +301,7 @@ class S3FullBucketAccess(IAMPolicy):
                         Resource=[
                             Join("", ["arn:aws:s3:::", Ref(i), "/*"])
                             for i in brefs
+
                         ]
                     ),
                 ]
@@ -370,11 +389,7 @@ class CloudWatchLogs(IAMPolicy):
                         Effect=aws.Allow,
                         Resource=['*'],
                         Action=[
-                            aws.Action("logs", "PutLogEvents"),
-                            aws.Action("logs", "PutMetricFilter"),
-                            aws.Action("logs", "CreateLogGroup"),
-                            aws.Action("logs", "CreateLogStream"),
-                            aws.Action("logs", "DescribeLogStream"),
+                            aws.Action("logs", "*"),
                         ]
                     )
                 ]
@@ -425,7 +440,8 @@ class CodeDeployPolicy(IAMPolicy):
                             aws.Action('tag', 'GetTags'),
                             aws.Action('tag', 'GetResources'),
                             aws.Action('tag', 'GetTagsForResource'),
-                            aws.Action('tag', 'GetTagsForResourceList')
+                            aws.Action('tag', 'GetTagsForResourceList'),
+                            aws.Action('lambda', '*')
                         ]
                     ),
                 ]

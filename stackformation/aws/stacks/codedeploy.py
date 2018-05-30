@@ -48,11 +48,15 @@ class App(object):
             '{}Group'.format(self.name),
             ServiceRoleArn=Ref(self.stack.role_parameter),
             ApplicationName=Ref(app),
-            DeploymentConfigName=self.strategy
+            DeploymentConfigName=self.strategy,
+            DeploymentStyle=cdeploy.DeploymentStyle(
+                DeploymentType='BLUE_GREEN',
+                DeploymentOption='WITH_TRAFFIC_CONTROL'
+            )
         ))
 
-        group.AutoScalingGroups = []
-        group.Ec2TagFilters = []
+        # group.AutoScalingGroups = []
+        # group.Ec2TagFilters = []
 
         for target in self.targets:
 
