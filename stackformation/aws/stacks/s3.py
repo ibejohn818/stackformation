@@ -20,10 +20,19 @@ class BaseS3Bucket(object):
         self.versioning = False
         self.public_read = False
         self.stack = None
+        self.cors_enabled = False
         self.cors_rules = []
 
-    def add_cors_rules(self, **kwargs):
-        pass
+    def add_cors_rule(self, name, headers, methods, origins, age, **kwargs):
+
+        rule =  s3.CorsRules(
+                AllowedHeaders= headers,
+                AllowedMethods= methods,
+                AllowedOrigins= origins,
+                MaxAge= age,
+                Id= name
+                )
+        self.cors_rules.append(rule)
 
     def set_public_read(self, val):
         self.public_read = val
@@ -76,6 +85,16 @@ class S3Bucket(BaseS3Bucket):
 
         if self.website_mode:
             s3b.WebsiteConfiguration  = s3.WebsiteConfiguration(**self.website_config)
+
+        if self.cors_enabled is True \
+                and len(self.cors_rules) <= 0:
+            self.add_cors_rule("CorsAll", ['*'], ['GET'], ['*'], 3000)
+
+        if len(self.cors_rules) > 0:
+            cors = s3.CorsConfiguration(
+                    CorsRules=self.cors_rules
+                    )
+            s3b.CorsConfiguration = cors
 
         t.add_output([
             Output(

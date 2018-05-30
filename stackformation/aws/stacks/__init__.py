@@ -91,7 +91,7 @@ class BaseStack(StackComponent):
         results = {}
 
         if len(self.template_components) <= 0:
-            results
+            return
 
         for k, v in self.template_components.items():
             for c in v:

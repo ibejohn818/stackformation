@@ -1,4 +1,6 @@
 from stackformation.aws.stacks import BaseStack
+from stackformation.aws.stacks import TemplateComponent
+from stackformation.aws.stacks import dynamodb
 from troposphere import (sns, iam, awslambda)
 import awacs.kms
 import awacs.sns
@@ -10,6 +12,7 @@ from troposphere import (  # noqa
     Select, Tags, Template,
     GetAZs, Export, Base64,
 )
+from stackformation import utils
 import os
 import zipfile
 import inflection
@@ -19,15 +22,30 @@ import tempfile
 import base64
 import hashlib
 import time
+import json
 
 
 logger = logging.getLogger(__name__)
+
+
+class LambdaEnvTemplate(TemplateComponent):
+
+    def __init__(self, text):
+        self.name = 'LambdaEnvVars'
+        self.text = text
+
+    def render(self):
+        return self.text
+
 
 class BaseLambda(BaseStack):
 
     def __init__(self, name, **kwargs):
 
         super(BaseLambda, self).__init__(name, 500)
+        self.vars = {}
+        self.memory = 256
+        self.timeout = 30
         self.zip_path = kwargs.get('zip_path', '')
         self.zip_uploaded = False
         self.zip_name = kwargs.get('zip_name', 'Code.zip')
@@ -131,21 +149,42 @@ class LambdaStack(BaseLambda):
         super(LambdaStack, self).__init__("LambdaStack", **kwargs)
 
         self.stack_name = name
-        self.vars = {}
-        self.memory = 256
         self.handler = "index.handler"
         self.runtime = kwargs.get('runtime', 'python2.7')
-        self.aliaes = []
+        self.aliases = []
         self.role = kwargs.get('role', None)
         self.s3_bucket = kwargs.get('s3_bucket', None)
         self.s3_key = kwargs.get('s3_key', None)
+        self.event_sources = []
 
-    def add_alias(self, alias):
-        self.append(alias)
+    def add_env_var(self, key, val):
+        self.add_template_component('{}LambdaVar'.format(self.stack_name),
+                LambdaEnvTemplate(val))
+        self.vars.update({key: val})
+
+    def add_event_source(self, source):
+        self.event_sources.append(source)
+
+    def add_alias(self, name, version='$LATEST'):
+        self.aliases.append({'name': name, 'version': version})
+
+    def jinja_env_vars(self):
+        if not self._deploying or \
+                len(self.vars.keys()) <= 0:
+            return
+        context = self.infra.context
+        env = utils.jinja_env(context)
+        for k, v in self.vars.items():
+            t = env[0].from_string(v)
+            self.vars[k] = t.render(context.vars)
 
     def build_template(self):
 
+        deploy_alias = False
+
         t = self._init_template()
+
+        self.jinja_env_vars()
 
         role_param = t.add_parameter(Parameter(
             self.role.output_role_arn(),
@@ -158,6 +197,7 @@ class LambdaStack(BaseLambda):
 
         if self._deploying:
             if not self.uploaded and self._bucket_name():
+                deploy_alias=True
                 self._determine_code_versions()
                 logger.info("S3 Key: {}".format(self.zip_name))
 
@@ -166,6 +206,7 @@ class LambdaStack(BaseLambda):
             FunctionName=self.get_stack_name(),
             Handler=self.handler,
             MemorySize=self.memory,
+            Timeout=self.timeout,
             Runtime=self.runtime,
             Role=Ref(role_param),
             Environment=awslambda.Environment(
@@ -179,6 +220,33 @@ class LambdaStack(BaseLambda):
 
         if self.s3_version:
             func.Code.S3ObjectVersion = self.s3_version
+
+        if deploy_alias is True:
+            for v in self.aliases:
+                t.add_resource(awslambda.Alias(
+                    '{}Alias'.format(v['name']),
+                    FunctionName=Ref(func),
+                    Name=v['name'],
+                    FunctionVersion=v['version']
+                ))
+
+        if len(self.event_sources) > 0:
+            for src in self.event_sources:
+                if isinstance(src, dynamodb.DynamoTable):
+                    p = t.add_parameter(Parameter(
+                        src.output_stream(),
+                        Type='String'
+                        ))
+                    t.add_resource(awslambda.EventSourceMapping(
+                        'LambdaDynamo{}'.format(src.name),
+                        FunctionName=Ref(func),
+                        EventSourceArn=Ref(p),
+                        StartingPosition='LATEST'
+                    ))
+
+
+
+
 
         t.add_output([
             Output(
