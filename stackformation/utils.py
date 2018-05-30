@@ -5,6 +5,8 @@ import os
 from troposphere import Parameter
 import click
 from colorama import Fore, Style, Back  # noqa
+import hashlib
+import json
 
 
 def jinja_env(context, capture_vars=False):
@@ -27,6 +29,10 @@ def jinja_env(context, capture_vars=False):
 
     return env, var_capture
 
+def md5str(data):
+    m = hashlib.md5()
+    m.update(data.encode('utf-8'))
+    return m.hexdigest()
 
 def match_stack(selector, stack):
     """Match stacks using selector as the comparison var.
@@ -123,6 +129,9 @@ def ucfirst(word):
 
 
 def tparam(template, name, value, description, default=None):
+
+    if template.Parameters.get(name):
+        return template.Parameters.get(name)
 
     p = template.add_parameter(Parameter(
         name,
