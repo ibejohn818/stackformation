@@ -159,6 +159,15 @@ class Infra(object):
 
         return infra
 
+    def has_stack(self, stack):
+        if not stack.infra:
+            return False
+        sn = stack.get_stack_name()
+        for s in self.stacks:
+            if s.get_stack_name() == sn:
+                return True
+        return False
+
     def add_stack(self, stack):
 
         if not isinstance(stack, (BaseStack)):
