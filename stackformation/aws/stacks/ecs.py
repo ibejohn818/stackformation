@@ -1,5 +1,6 @@
 from stackformation import (BaseStack)
 import troposphere.ecs as ecs
+import troposphere.ecr as ecr
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
@@ -7,6 +8,82 @@ from troposphere import (  # noqa
     GetAZs, Export
 )
 
+
+class TaskDef(object):
+
+    def __init__(self, name, role):
+
+        self.name = name
+        self.role = role
+        self.stack = None
+        self.subnet = None
+        self.cpu = '.25'
+        self.memory = '0.5GB'
+        self.mode = 'FARGATE'
+        self.network_mode = 'awsvpc'
+        self.containers = []
+
+    def add_container(self, data={}):
+        self.containers.append(data)
+
+    def build_task(self, t):
+
+        task = t.add_resource(ec2.TaskDefinition(
+            '{}TaskDef'.format(self.name),
+            RequiresCompatibility=[self.mode],
+            NetworkMode=self.network_mode,
+            Cpu=self.cpu,
+            Memory=self.memory,
+            ContainerDefinitions=[
+                ecs.ContainerDefinition(**ctr)
+                for ctr in self.containers
+            ]
+        ))
+
+class ECRRepo(object):
+
+    def __init__(self, name):
+        self.name = name
+        self.stack = None
+
+    def build_repo(self, t):
+
+        repo = t.add_resource(ecr.Repository(
+            '{}ECRRepo'.format(self.name)
+        ))
+
+        t.add_output(Output(
+            '{}ECRRepo'.format(self.name),
+            Value=Ref(repo)
+        ))
+
+        return repo
+
+    def output_repo(self):
+        return "{}{}ECRRepo".format(self.stack.get_stack_name(), self.name)
+
+
+class ECRStack(BaseStack):
+
+    def __init__(self, name):
+        super(ECRStack, self).__init__("ECRStack", 200)
+        self.stack_name = name
+        self.repos = []
+
+    def add_repo(self, repo):
+        repo.stack = self
+        self.repos.append(repo);
+
+    def build_template(self):
+        t = self._init_template()
+
+        for r in self.repos:
+            r.build_repo(t)
+        return t
+
+
+class ECSTaskStack(BaseStack):
+    pass
 
 class Cluster(object):
 
