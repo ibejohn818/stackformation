@@ -47,7 +47,7 @@ class EBSFailAlarm(Alarm):
 
         name = "EBSFailAlarm{}".format(ebs_volume.name)
         super(EBSFailAlarm, self).__init__(name)
-        if not isinstance(ebs_volume, (stackformation.aws.stacks.ebs.EBSVolume)): # noqa
+        if not isinstance(ebs_volume, (stackformation.aws.stacks.ebs.EBSVolume)):  # noqa
             raise Exception("Invalid EBS Volume")
         self.ebs_volume = ebs_volume
 

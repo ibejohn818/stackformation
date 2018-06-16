@@ -60,7 +60,6 @@ class BotoSession():
         return self.session.resource(service)
 
 
-
 class Context(object):
     """Container of variables to pass between Infra's and Stack's
 

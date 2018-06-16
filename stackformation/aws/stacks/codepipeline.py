@@ -1,5 +1,5 @@
 from stackformation.aws.stacks import (BaseStack)
-import troposphere.codepipeline as cpl # noqa
+import troposphere.codepipeline as cpl  # noqa
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,

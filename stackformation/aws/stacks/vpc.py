@@ -1,8 +1,8 @@
 from stackformation.aws.stacks import BaseStack, SoloStack
 from stackformation.aws.stacks import (eip)
-from troposphere import (ec2, iam) # noqa
-import awacs # noqa
-from awacs import aws # noqa
+from troposphere import (ec2, iam)  # noqa
+import awacs  # noqa
+from awacs import aws  # noqa
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
@@ -10,6 +10,9 @@ from troposphere import (  # noqa
     GetAZs, Export
 )
 import inflection
+import ipaddress
+
+MIN_HOSTS = 16
 
 
 class SecurityGroup(object):
@@ -165,7 +168,7 @@ class WebSecurityGroup(SecurityGroup):
 
 class AllPortsSecurityGroup(SecurityGroup):
 
-    def __init__(self, name):
+    def __init__(self, name=''):
 
         super(AllPortsSecurityGroup, self).__init__(name)
 
@@ -221,16 +224,21 @@ class VPCStack(BaseStack, SoloStack):
     Routes/Acls stacks for large VPC with many resources
     """
 
-    def __init__(self, name=""):
+    def __init__(self, **kwargs):
 
         super(VPCStack, self).__init__("VPC", 1)
-
-        self.stack_name = name
+        config = {
+            'private_subnets': 2,
+            'public_subnets': 2,
+            'subnet_mask': 24,
+            'base_ip': '10.10'
+        }
+        config.update(kwargs)
+        self.conf = config
+        self.stack_name = ''
         self.security_groups = []
         self.nat_eip = None
         self.enable_dns = True,
-        # str: the base cidr of the VPC. Will use /16 (Class B)
-        self.base_cidr = "10.0"
         # bool: enable internal DNS Hostname resolution. Default is True
         self.enable_dns_hostnames = True
         # bool: add nat-gateway to private subnets and private routetable
@@ -305,6 +313,49 @@ class VPCStack(BaseStack, SoloStack):
 
         return self.find_class_in_list(self.security_groups, clazz, name)
 
+    def get_subnet_ip(self, subnet_index):
+        """
+        Generate and return the next ip for the given
+        subnet index
+
+        Args:
+            subnet_index (int): The subnet index
+
+        Returns:
+            string: IPv4
+        """
+        start = ipaddress.IPv4Address(self.get_base_ip())
+        if subnet_index <= 0:
+            return str(ipaddress.IPv4Address(start))
+        else:
+            # get current number of hosts
+            current_num_hosts = self.calc_num_hosts(
+                self.conf['subnet_mask']) * subnet_index
+            # get the next host
+            next = ipaddress.ip_address(str(start)) + current_num_hosts
+            return str(next)
+
+    def calc_num_hosts(self, netmask):
+        """
+        Return the number of hosts for given subnet mask
+        * Subtract 2 (broadcast & gateway) and 3
+        (AWS Usage https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html#VPC_Sizing)
+        to get total number of 'usable' hosts.
+
+        Args:
+            netmask (int): Subnet mask
+
+        Returns:
+            int: Total number of hosts
+        """
+        hosts = 2**(32 - int(netmask))
+        if hosts < MIN_HOSTS:
+            raise Exception("CALC HOSTS ERROR: AWS VPC does not support netmasks with less-than {} hosts".format(MIN_HOSTS))  # noqa
+        return hosts
+
+    def get_base_ip(self):
+        return "{}.0.0".format(self.conf['base_ip'])
+
     def build_template(self):
 
         t = self._init_template()
@@ -321,7 +372,7 @@ class VPCStack(BaseStack, SoloStack):
         # add vpc
         vpc = t.add_resource(ec2.VPC(
             "VPC",
-            CidrBlock="{}.0.0/16".format(self.base_cidr),
+            CidrBlock="{}/16".format(self.get_base_ip()),
             EnableDnsSupport="true" if self.enable_dns else "false",
             EnableDnsHostnames="true" if self.enable_dns_hostnames else "false",  # noqa
             Tags=Tags(
@@ -444,73 +495,78 @@ class VPCStack(BaseStack, SoloStack):
             if v[0] is not None and v[1] is not None:
                 ae.PortRange = ec2.PortRange(From=v[0], To=v[1])
 
-        # create public subnets
-        cls_c = 0
-        for i in range(self.num_azs):
-            cls_c += 2
-            key = i + 1
-            sname = 'PublicSubnet{}'.format(key)
+        pub_subs = [
+            str(i)
+            for i in range(0, self.conf['public_subnets'] * 2, 2)
+        ]
+        for k, i in enumerate(pub_subs):
+
+            subnet_ip = self.get_subnet_ip(int(i))
             sn = t.add_resource(ec2.Subnet(
-                sname,
+                "PublicSubnet{}".format(i),
                 VpcId=Ref(vpc),
-                AvailabilityZone=Select(i, GetAZs(Ref("AWS::Region"))),
-                CidrBlock="{}.{}.0/23".format(self.base_cidr, cls_c),
+                AvailabilityZone=Select(k, GetAZs("")),
+                MapPublicIpOnLaunch=True,
+                CidrBlock="{}/{}".format(subnet_ip, self.conf['subnet_mask']),
                 Tags=Tags(
-                    Name=sname
+                    Name="PublicSubnet{}".format(i)
                 )
             ))
             self.subnets['public'].append(sn)
 
             # associate route table
             t.add_resource(ec2.SubnetRouteTableAssociation(
-                'PublicSubnetAssoc{}'.format(key),
+                'PublicSubnetAssoc{}'.format(i),
                 RouteTableId=Ref(public_route_table),
                 SubnetId=Ref(sn)
             ))
             # associate acl
             t.add_resource(ec2.SubnetNetworkAclAssociation(
-                'PublicSubnetAcl{}'.format(key),
+                'PublicSubnetAcl{}'.format(i),
                 SubnetId=Ref(sn),
                 NetworkAclId=Ref(default_acl_table)
             ))
             t.add_output([
                 Output(
-                    'PublicSubnet{}'.format(key),
+                    'PublicSubnet{}'.format(i),
                     Value=Ref(sn)
                 )
             ])
 
-        # create private subnets
-        for i in range(self.num_azs):
-            cls_c += 2
-            key = i + 1
-            sname = 'PrivateSubnet{}'.format(key)
+        priv_subs = [
+            str(i + 1)
+            for i in range(0, self.conf['private_subnets'] * 2, 2)
+        ]
+
+        for k, i in enumerate(priv_subs):
+
+            subnet_ip = self.get_subnet_ip(int(i))
             sn = t.add_resource(ec2.Subnet(
-                sname,
+                "PrivateSubnet{}".format(i),
                 VpcId=Ref(vpc),
-                AvailabilityZone=Select(i, GetAZs(Ref("AWS::Region"))),
-                CidrBlock="{}.{}.0/23".format(self.base_cidr, cls_c),
+                AvailabilityZone=Select(k, GetAZs("")),
+                CidrBlock="{}/{}".format(subnet_ip, self.conf['subnet_mask']),
                 Tags=Tags(
-                    Name=sname
+                    Name="PrivateSubnet{}".format(i)
                 )
             ))
             self.subnets['private'].append(sn)
 
             # associate route table
             t.add_resource(ec2.SubnetRouteTableAssociation(
-                'PrivateSubnetAssoc{}'.format(key),
+                'PrivateSubnetAssoc{}'.format(k),
                 RouteTableId=Ref(private_route_table),
                 SubnetId=Ref(sn)
             ))
             # associate acl
             t.add_resource(ec2.SubnetNetworkAclAssociation(
-                'PrivateSubnetAcl{}'.format(key),
+                'PrivateSubnetAcl{}'.format(k),
                 SubnetId=Ref(sn),
                 NetworkAclId=Ref(default_acl_table)
             ))
             t.add_output([
                 Output(
-                    'PrivateSubnet{}'.format(key),
+                    'PrivateSubnet{}'.format(i),
                     Value=Ref(sn)
                 )
             ])
@@ -566,13 +622,13 @@ class VPCStack(BaseStack, SoloStack):
     def output_private_subnets(self):
         return [
             "{}PrivateSubnet{}".format(self.get_stack_name(), i + 1)
-            for i in range(0, self.num_azs)
+            for i in range(0, self.conf['public_subnets'] * 2, 2)
         ]
 
     def output_public_subnets(self):
         return [
-            "{}PublicSubnet{}".format(self.get_stack_name(), i + 1)
-            for i in range(0, self.num_azs)
+            "{}PublicSubnet{}".format(self.get_stack_name(), i)
+            for i in range(0, self.conf['private_subnets'] * 2, 2)
         ]
 
     def output_vpc(self):

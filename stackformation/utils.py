@@ -6,7 +6,6 @@ from troposphere import Parameter
 import click
 from colorama import Fore, Style, Back  # noqa
 import hashlib
-import json
 
 
 def jinja_env(context, capture_vars=False):
@@ -29,10 +28,12 @@ def jinja_env(context, capture_vars=False):
 
     return env, var_capture
 
+
 def md5str(data):
     m = hashlib.md5()
     m.update(data.encode('utf-8'))
     return m.hexdigest()
+
 
 def match_stack(selector, stack):
     """Match stacks using selector as the comparison var.
@@ -72,6 +73,23 @@ def match_stack(selector, stack):
             result = False
 
     return result
+
+
+def ensure_param(template, key, type='String', desc=None, default=None):
+
+    if template.parameters.get(key):
+        return template.parameters.get(key)
+
+    p = template.add_parameter(Parameter(
+        key,
+        Type=type))
+    if desc is not None:
+        p.Description = desc
+
+    if default is not None:
+        p.Default = default
+
+    return p
 
 
 def match_image(selector, image_name):
