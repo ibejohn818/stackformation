@@ -198,6 +198,38 @@ class BaseStack(StackComponent):
     def before_deploy(self, infra, context):
         pass
 
+    def upload_to_s3(self, infra, name, json_template):
+
+        sts = infra.boto_session.client('sts')
+
+        account_id = sts.get_caller_identity().get('Account')
+
+        bucket_name = 'stackformation-templates-{}'.format(account_id)
+
+        s3 = infra.boto_session.client('s3')
+
+        # make sure the bucket exists
+        try:
+            s3.head_bucket(Bucket=bucket_name)
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                # TODO: add lifecycle policy to keep this bucket clean
+                s3.create_bucket(
+                    Bucket=bucket_name, CreateBucketConfiguration={
+                        'LocationConstraint': infra.boto_session.get_conf('region_name')}, )
+
+        # upload the template
+        s3.put_object(
+            Bucket=bucket_name,
+            Key='{}.json'.format(name),
+            Body=json_template,
+        )
+
+        # this is what CF wants for the url
+        return 'https://s3.amazonaws.com/{}/{}.json'.format(
+            bucket_name, name
+        )
+
     def start_deploy(self, infra, context):
         """
 
@@ -232,10 +264,17 @@ class BaseStack(StackComponent):
 
         dep_kw = {
             'StackName': self.get_remote_stack_name(),
-            'TemplateBody': template.to_json(),
             'Parameters': parameters,
             'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
         }
+
+        # check template size constraint
+        json_template = template.to_json()
+        if len(json_template) < 5100:
+            dep_kw['TemplateBody'] = json_template
+        else:
+            dep_kw['TemplateURL'] = self.upload_to_s3(
+                infra, self.get_remote_stack_name(), json_template)
         # import json
         # print(json.dumps(dep_kw, indent=True))
         # exit(1)

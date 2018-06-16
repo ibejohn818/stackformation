@@ -10,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class BaseS3Bucket(object):
 
     def __init__(self, name):
@@ -25,13 +26,13 @@ class BaseS3Bucket(object):
 
     def add_cors_rule(self, name, headers, methods, origins, age, **kwargs):
 
-        rule =  s3.CorsRules(
-                AllowedHeaders= headers,
-                AllowedMethods= methods,
-                AllowedOrigins= origins,
-                MaxAge= age,
-                Id= name
-                )
+        rule = s3.CorsRules(
+            AllowedHeaders=headers,
+            AllowedMethods=methods,
+            AllowedOrigins=origins,
+            MaxAge=age,
+            Id=name
+        )
         self.cors_rules.append(rule)
 
     def set_public_read(self, val):
@@ -45,6 +46,12 @@ class BaseS3Bucket(object):
 
     def output_bucket_url(self):
         return "{}{}BucketUrl".format(
+            self.stack.get_stack_name(),
+            self.name
+        )
+
+    def output_website_url(self):
+        return "{}{}WebsiteUrl".format(
             self.stack.get_stack_name(),
             self.name
         )
@@ -84,7 +91,8 @@ class S3Bucket(BaseS3Bucket):
         )
 
         if self.website_mode:
-            s3b.WebsiteConfiguration  = s3.WebsiteConfiguration(**self.website_config)
+            s3b.WebsiteConfiguration = s3.WebsiteConfiguration(
+                **self.website_config)
 
         if self.cors_enabled is True \
                 and len(self.cors_rules) <= 0:
@@ -92,8 +100,8 @@ class S3Bucket(BaseS3Bucket):
 
         if len(self.cors_rules) > 0:
             cors = s3.CorsConfiguration(
-                    CorsRules=self.cors_rules
-                    )
+                CorsRules=self.cors_rules
+            )
             s3b.CorsConfiguration = cors
 
         t.add_output([
@@ -106,10 +114,15 @@ class S3Bucket(BaseS3Bucket):
                 "{}BucketUrl".format(self.name),
                 Value=GetAtt(s3b, "DomainName"),
                 Description="{} Bucket Name".format(self.name)
+            ),
+            Output(
+                '{}WebsiteUrl'.format(self.name),
+                Value=GetAtt(s3b, 'WebsiteURL')
             )
         ])
 
         return s3b
+
 
 class LambdaCodeBucket(S3Bucket):
 

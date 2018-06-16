@@ -20,15 +20,14 @@ def test_vpc_stack(prod_infra):
     prod_infra = prod_infra[1]
 
     vpc_stack = prod_infra.add_stack(vpc.VPCStack())
-    vpc_stack.num_azs = 3
 
     assert isinstance(vpc_stack, vpc.VPCStack)
 
     t = vpc_stack.build_template()
 
-    assert len(vpc_stack.output_azs()) == 3
-    assert len(vpc_stack.output_private_subnets()) == 3
-    assert len(vpc_stack.output_public_subnets()) == 3
+    assert len(vpc_stack.output_azs()) == 2
+    assert len(vpc_stack.output_private_subnets()) == 2
+    assert len(vpc_stack.output_public_subnets()) == 2
     assert vpc_stack.output_vpc() == "ProdTestVPCVpcId"
     assert vpc_stack.output_public_routetable() == "ProdTestVPCPublicRouteTable"
     assert vpc_stack.output_private_routetable() == "ProdTestVPCPrivateRouteTable"

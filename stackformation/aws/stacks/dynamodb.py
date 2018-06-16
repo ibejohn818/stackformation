@@ -1,15 +1,33 @@
 from stackformation.aws.stacks import BaseStack
-from troposphere import (sns, iam, dynamodb)
-import awacs.kms
-import awacs.sns
-import awacs.logs
-from awacs import aws
+from troposphere import (sns, iam, dynamodb) # noqa
+import awacs.kms # noqa
+import awacs.sns # noqa
+import awacs.logs # noqa
+from awacs import aws # noqa
+from awacs.aws import Allow, Statement, Principal, Action, Policy # noqa
+from awacs.sts import AssumeRole # noqa
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
     Parameter, Output, Ref,
     Select, Tags, Template,
     GetAZs, Export, Base64,
 )
+from troposphere.applicationautoscaling import (
+    ScalableTarget,
+    ScalingPolicy,
+    TargetTrackingScalingPolicyConfiguration,
+    PredefinedMetricSpecification
+)
+from stackformation.utils import ensure_param
+
+SCALING_DEFS = {
+    'in_cooldown': 10800,
+    'out_cooldown': 60,
+    'min': 1,
+    'max': 100,
+    'target': 70
+}
+
 
 class DynamoTable(object):
 
@@ -60,15 +78,53 @@ class DynamoTable(object):
                     }
                 ]
 
-        """
+        """ # noqa
         self.stack = None
         self.name = name
         self.key_schema = kwargs.get('key_schema')
         self.attrs = kwargs.get('attrs', [])
-        self.read_units=1
-        self.write_units=1
+        self.gsi = kwargs.get('gsi', [])
+        self.read_units = 1
+        self.write_units = 1
         self.use_table_name = False
         self.stream_spec = None
+        self.resource = None
+        self.scaling_params = {
+            'read': SCALING_DEFS,
+            'write': SCALING_DEFS
+        }
+        self.autoscaling = kwargs.get('autoscaling', False)
+        self.scale_gsi = kwargs.get('scale_gsi', False)
+        self.scaling_role = kwargs.get('scaling_role', None)
+
+    def set_scaling_param(self, key, val, type=None):
+        if type is None:
+            types = ['read', 'write']
+        else:
+            types = [type]
+        for t in types:
+            self.scaling_params[t][key] = val
+
+    def create_scaling_map(self):
+
+        smap = []
+        smap.append({
+            'resource': ['table', Ref(self.resource)],
+            'name': self.name,
+            'write_dim': "dynamodb:table:WriteCapacityUnits",
+            'read_dim': "dynamodb:table:ReadCapacityUnits"
+        })
+
+        if self.scale_gsi:
+            for gsi in self.gsi:
+                idx_name = gsi['name']
+                smap.append({
+                    'resource': ['table', Ref(self.resource), 'index/{}'.format(idx_name)], # noqa
+                    'name': idx_name.replace('-', ''),
+                    'write_dim': "dynamodb:index:WriteCapacityUnits",
+                    'read_dim': "dynamodb:index:ReadCapacityUnits"
+                })
+        return smap
 
     def build_table(self, t):
 
@@ -78,21 +134,20 @@ class DynamoTable(object):
                 ReadCapacityUnits=self.read_units,
                 WriteCapacityUnits=self.write_units
             )
-            ))
+        ))
 
         if self.use_table_name:
             tbl.TableName = self.name
 
-
-        tbl.KeySchema=[
+        tbl.KeySchema = [
             dynamodb.KeySchema(
-                    AttributeName=v['name'],
-                    KeyType=v['type']
-                )
+                AttributeName=v['name'],
+                KeyType=v['type']
+            )
             for v in self.key_schema
         ]
 
-        tbl.AttributeDefinitions=[
+        tbl.AttributeDefinitions = [
             dynamodb.AttributeDefinition(
                 AttributeName=attr['name'],
                 AttributeType=attr['type']
@@ -100,11 +155,34 @@ class DynamoTable(object):
             for attr in self.attrs
         ]
 
-        tbl.GlobalSecondaryIndexes=[]
+        tbl.GlobalSecondaryIndexes = []
+
+        for a in self.gsi:
+            gsi = dynamodb.GlobalSecondaryIndex()
+            gsi.IndexName = a['name']
+            gsi.KeySchema = []
+            for k in a['keys']:
+                gsi.KeySchema.append(
+                    dynamodb.KeySchema(
+                        AttributeName=k['name'],
+                        KeyType=k['type']))
+            gsi.Projection = dynamodb.Projection(
+                ProjectionType=a['proj']['type']
+            )
+            if a['proj'].get('nka') and len(a['proj'].get('nka')) > 0:
+                gsi.Projection.Projection.NonKeyAttributes = []
+                for aa in a['proj'].get('nka'):
+                    gsi.Projection.Projection.NonKeyAttributes.append(aa)
+
+            gsi.ProvisionedThroughput = dynamodb.ProvisionedThroughput(
+                ReadCapacityUnits=a['read_units'],
+                WriteCapacityUnits=a['write_units']
+            )
+            tbl.GlobalSecondaryIndexes.append(gsi)
 
         if self.stream_spec:
-            tbl.StreamSpecification=dynamodb.StreamSpecification(
-                    StreamViewType=self.stream_spec
+            tbl.StreamSpecification = dynamodb.StreamSpecification(
+                StreamViewType=self.stream_spec
             )
             t.add_output(
                 Output(
@@ -127,6 +205,68 @@ class DynamoTable(object):
             )
         )
 
+        self.resource = tbl
+
+        if self.autoscaling:
+
+            role_param = ensure_param(
+                t, self.scaling_role.output_role_arn(), "String")
+
+            smap = self.create_scaling_map()
+            for m in smap:
+                write_target = t.add_resource(ScalableTarget(
+                    '{}DDBWriteTarget'.format(m['name']),
+                    MinCapacity=self.scaling_params['write']['min'],
+                    MaxCapacity=self.scaling_params['write']['max'],
+                    ResourceId=Join("/", m['resource']),
+                    RoleARN=Ref(role_param),
+                    ServiceNamespace="dynamodb",
+                    ScalableDimension=m['write_dim']
+                ))
+                read_target = t.add_resource(ScalableTarget(
+                    '{}DDBReadTarget'.format(m['name']),
+                    MinCapacity=self.scaling_params['read']['min'],
+                    MaxCapacity=self.scaling_params['read']['max'],
+                    ResourceId=Join("/", m['resource']),
+                    RoleARN=Ref(role_param),
+                    ServiceNamespace="dynamodb",
+                    ScalableDimension=m['read_dim']
+                ))
+                t.add_resource(ScalingPolicy(
+                    '{}DDBWritePolicy'.format(m['name']),
+                    PolicyName='{}DynamoScaleWritePolicy'.format(m['name']),
+                    PolicyType='TargetTrackingScaling',
+                    ScalingTargetId=Ref(write_target),
+                    TargetTrackingScalingPolicyConfiguration=TargetTrackingScalingPolicyConfiguration(  # noqa
+                        TargetValue=self.scaling_params[
+                            'write']['target'],
+                        ScaleInCooldown=self.scaling_params[
+                            'write']['in_cooldown'],
+                        ScaleOutCooldown=self.scaling_params[
+                            'write']['out_cooldown'],
+                        PredefinedMetricSpecification=PredefinedMetricSpecification(  # noqa
+                            PredefinedMetricType="DynamoDBWriteCapacityUtilization" # noqa
+                        )
+                    )
+                ))
+                t.add_resource(ScalingPolicy(
+                    '{}DDBReadPolicy'.format(m['name']),
+                    PolicyName='{}DynamoScaleReadPolicy'.format(m['name']),
+                    PolicyType='TargetTrackingScaling',
+                    ScalingTargetId=Ref(read_target),
+                    TargetTrackingScalingPolicyConfiguration=TargetTrackingScalingPolicyConfiguration(  # noqa
+                        TargetValue=self.scaling_params[
+                            'read']['target'],
+                        ScaleInCooldown=self.scaling_params[
+                            'read']['in_cooldown'],
+                        ScaleOutCooldown=self.scaling_params[
+                            'read']['out_cooldown'],
+                        PredefinedMetricSpecification=PredefinedMetricSpecification(  # noqa
+                            PredefinedMetricType="DynamoDBReadCapacityUtilization" # noqa
+                        )
+                    )
+                ))
+
         return tbl
 
     def output_table(self):
@@ -136,7 +276,9 @@ class DynamoTable(object):
         return "{}{}TableArn".format(self.stack.get_stack_name(), self.name)
 
     def output_stream(self):
-        return "{}{}TableStreamArn".format(self.stack.get_stack_name(), self.name)
+        return "{}{}TableStreamArn".format(
+            self.stack.get_stack_name(), self.name)
+
 
 class DynamoDBStack(BaseStack):
 
@@ -144,6 +286,7 @@ class DynamoDBStack(BaseStack):
         super(DynamoDBStack, self).__init__('DynamoDB', 100)
         self.stack_name = name
         self.tables = []
+        self.scaling_iam_role = None
 
     def add_table(self, table):
         table.stack = self
@@ -172,6 +315,5 @@ class DynamoDBStack(BaseStack):
                 if i > 0:
                     for tab in chunks[i]:
                         tab.table_resource.DependsOn = \
-                            chunks[i-1][0].table_resource.name
+                            chunks[i - 1][0].table_resource.name
         return t
-

@@ -59,7 +59,7 @@ def test_ec2_stack(infra):
 
     assert inst['Properties']['KeyName'] == 'testkey'
 
-    assert inst['Properties']['NetworkInterfaces'][0]['SubnetId'] == {'Ref': 'ProdTestVPCPublicSubnet1'}
+    assert inst['Properties']['NetworkInterfaces'][0]['SubnetId'] == {'Ref': 'ProdTestVPCPublicSubnet0'}
 
     assert inst['Properties']['NetworkInterfaces'][0]['GroupSet'][0] == {'Ref': 'ProdTestVPCSSHSecurityGroup'}
 

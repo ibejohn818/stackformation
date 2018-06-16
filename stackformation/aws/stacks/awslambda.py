@@ -57,7 +57,6 @@ class BaseLambda(BaseStack):
         self.s3_version = False
         self.uploaded = False
 
-
     def _bucket_name(self):
         name = self.infra.get_var(self.s3_bucket.output_bucket_name())
         return name
@@ -85,14 +84,13 @@ class BaseLambda(BaseStack):
             obj = self.s3().head_object(
                 Bucket=self._bucket_name(),
                 Key=self.zip_name
-                )
+            )
             self.s3_version = obj['VersionId']
             self.s3_hash = obj['Metadata']['code256sum']
             return True
 
         except Exception as e:
             return False, False
-
 
     def _upload_zip(self):
         try:
@@ -106,7 +104,7 @@ class BaseLambda(BaseStack):
                     Metadata={
                         'code256sum': code_hash
                     }
-                    )
+                )
                 self.s3_hash = False
                 self.s3_version = False
                 self.uploaded = True
@@ -122,7 +120,6 @@ class BaseLambda(BaseStack):
 
     def _prune_uploads(self):
         pass
-
 
     def s3(self):
         if not self._s3:
@@ -156,11 +153,22 @@ class LambdaStack(BaseLambda):
         self.s3_bucket = kwargs.get('s3_bucket', None)
         self.s3_key = kwargs.get('s3_key', None)
         self.event_sources = []
+        self.vpc_stack = kwargs.get('vpc_stack', None)
+        self.public_subnet = kwargs.get('public_subnet', True)
+        self.security_groups = []
+
+    def add_security_group(self, group):
+        self.security_groups.append(group)
+        return group
 
     def add_env_var(self, key, val):
         self.add_template_component('{}LambdaVar'.format(self.stack_name),
-                LambdaEnvTemplate(val))
+                                    LambdaEnvTemplate(val))
         self.vars.update({key: val})
+
+    def add_env_vars(self, dct={}):
+        for k, v in dct.items():
+            self.add_env_var(k, v)
 
     def add_event_source(self, source):
         self.event_sources.append(source)
@@ -197,7 +205,7 @@ class LambdaStack(BaseLambda):
 
         if self._deploying:
             if not self.uploaded and self._bucket_name():
-                deploy_alias=True
+                deploy_alias = True
                 self._determine_code_versions()
                 logger.info("S3 Key: {}".format(self.zip_name))
 
@@ -221,6 +229,31 @@ class LambdaStack(BaseLambda):
         if self.s3_version:
             func.Code.S3ObjectVersion = self.s3_version
 
+        # vpc mode
+        if self.vpc_stack is not None:
+
+            if self.public_subnet:
+                subnets = self.vpc_stack.output_public_subnets()
+            else:
+                subnets = self.vpc_stack.output_private_subnets()
+
+            subnet_refs = [
+                Ref(utils.ensure_param(t, val, 'String'))
+                for val in subnets
+            ]
+            func.VpcConfig = awslambda.VPCConfig(
+                SubnetIds=subnet_refs,
+                SecurityGroupIds=[]
+            )
+
+            for sg in self.security_groups:
+                sg_ref = Ref(
+                    utils.ensure_param(
+                        t,
+                        sg.output_security_group(),
+                        'String'))
+                func.VpcConfig.SecurityGroupIds.append(sg_ref)
+
         if deploy_alias is True:
             for v in self.aliases:
                 t.add_resource(awslambda.Alias(
@@ -236,17 +269,13 @@ class LambdaStack(BaseLambda):
                     p = t.add_parameter(Parameter(
                         src.output_stream(),
                         Type='String'
-                        ))
+                    ))
                     t.add_resource(awslambda.EventSourceMapping(
                         'LambdaDynamo{}'.format(src.name),
                         FunctionName=Ref(func),
                         EventSourceArn=Ref(p),
                         StartingPosition='LATEST'
                     ))
-
-
-
-
 
         t.add_output([
             Output(
