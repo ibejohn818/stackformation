@@ -15,14 +15,14 @@ CWD = os.path.realpath(os.path.dirname(stackformation.__file__)).strip('/')
 
 ANSIBLE_INSTALL = {
     'ubuntu': [
-        'sleep 60',
+        'sleep 90',
         'while ! grep "Cloud-init .* finished" /var/log/cloud-init.log; do',
         'echo "$(date -Ins) Waiting for cloud-init to finish"',
         'sleep 10',
         'done',
         'while fuser /var/lib/dpkg/lock >/dev/null 2>&1; do',
-            'echo " Waiting for other software managers to finish..."',
-            'sleep  5',
+        'echo " Waiting for other software managers to finish..."',
+        'sleep  5',
         'done',
         'sudo rm /var/lib/dpkg/lock',
         'sudo apt-get update ',

@@ -1,8 +1,8 @@
-{% for r in results -%}
+{% for r in results - %}
 ---------------------
-Stack: {{ r.Stack[0] }} ({{ r.Stack[1] }})
+Stack: {{r.Stack[0]}}({{r.Stack[1]}})
 Dependencies:
-    {% for rr in r['Dependencies'] -%}
-    - {{ rr[0] }} ({{rr[1]}})
-    {% endfor %}
-{% endfor -%}
+    {% for rr in r['Dependencies'] - %}
+    - {{rr[0]}}({{rr[1]}})
+    {% endfor % }
+{% endfor - %}

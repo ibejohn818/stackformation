@@ -96,6 +96,17 @@ class IAMRole(IAMBase):
         return t
 
 
+class IAMAdminRole(IAMRole):
+
+    def __init__(self):
+
+        super(IAMAdminRole, self).__init__('IAMAdminRole')
+        self.add_managed_policy("AdministratorAccess")
+        self.principals = [
+            'ecs-tasks.amazonaws.com',
+        ]
+
+
 class IAMPolicy(IAMBase):
 
     def __init__(self, name=''):
@@ -164,7 +175,7 @@ class EC2Profile(IAMRole):
 
     def __init__(self, name):
         super(EC2Profile, self).__init__(
-                name
+            name
         )
         self.principals = [
             "ec2.amazonaws.com", "ssm.amazonaws.com"
@@ -252,6 +263,42 @@ class DynamoAll(IAMPolicy):
                 Statement=[
                     aws.Statement(
                         Action=[awacs.aws.Action("dynamodb", "*")],
+                        Effect=aws.Allow,
+                        Resource=["*"]
+                    )
+                ]
+            )
+        ))
+
+
+class ECRAll(IAMPolicy):
+
+    def _bind_role(self, t, r):
+        r.Policies.append(iam.Policy(
+            'ecrall',
+            PolicyName='ecrall',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Action=[awacs.aws.Action("ecr", "*")],
+                        Effect=aws.Allow,
+                        Resource=["*"]
+                    )
+                ]
+            )
+        ))
+
+
+class SqsAll(IAMPolicy):
+
+    def _bind_role(self, t, r):
+        r.Policies.append(iam.Policy(
+            'sqsall',
+            PolicyName='sqsall',
+            PolicyDocument=aws.Policy(
+                Statement=[
+                    aws.Statement(
+                        Action=[awacs.aws.Action("sqs", "*")],
                         Effect=aws.Allow,
                         Resource=["*"]
                     )
@@ -410,6 +457,61 @@ class CodeDeployRole(IAMRole):
                 'codedeploy.eu-west-1.amazonaws.com',
                 'codedeploy.ap-southeast-2.amazonaws.com'
             ])
+
+
+class DynamoScalingPolicy(IAMPolicy):
+
+    def _bind_role(self, t, r):
+        r.Policies.append(
+            iam.Policy(
+                'DynamoScaleRolePolicy',
+                PolicyName='DynamoScaleRolePolicy',
+                PolicyDocument=aws.Policy(
+                    Statement=[
+                        aws.Statement(
+                            Effect=aws.Allow,
+                            Action=[
+                                aws.Action(
+                                    "dynamodb",
+                                    "DescribeTable"),
+                                aws.Action(
+                                    "dynamodb",
+                                    "UpdateTable"),
+                            ],
+                            Resource=["*"]),
+                        aws.Statement(
+                            Effect=aws.Allow,
+                            Action=[
+                                aws.Action(
+                                    "cloudwatch",
+                                    "PutMetricAlarm"),
+                                aws.Action(
+                                    "cloudwatch",
+                                    "DescribeAlarms"),
+                                aws.Action(
+                                    "cloudwatch",
+                                    "GetMetricStatistics"),
+                                aws.Action(
+                                    "cloudwatch",
+                                    "SetAlarmState"),
+                                aws.Action(
+                                    "cloudwatch",
+                                    "DeleteAlarms"),
+                            ],
+                            Resource=["*"]),
+                    ])))
+
+
+class DynamoScalingRole(IAMRole):
+
+    def __init__(self, name):
+        super(DynamoScalingRole, self).__init__(
+            "{}DDBScaling".format(name),
+            [
+                "application-autoscaling.amazonaws.com"
+            ])
+
+        self.add_policy(DynamoScalingPolicy())
 
 
 class CodeDeployPolicy(IAMPolicy):

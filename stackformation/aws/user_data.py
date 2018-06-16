@@ -87,6 +87,7 @@ mount -a
 class InstallSSMAgent(UserData):
     """Install the SSM Agent
     """
+
     def __init__(self):
         super(InstallSSMAgent, self).__init__("InstallSSMAgent")
 
@@ -100,7 +101,7 @@ class InstallSSMAgent(UserData):
             dpkg -i amazon-ssm-agent.deb
             systemctl enable amazon-ssm-agent
         fi
-""" # noqa
+"""  # noqa
 
 
 class InstallCodeDeployAgent(UserData):
@@ -116,9 +117,7 @@ class InstallCodeDeployAgent(UserData):
         wget https://aws-codedeploy-%s.s3.amazonaws.com/latest/install -O /tmp/cd-install
         chmod +x /tmp/cd-install
         /tmp/cd-install auto
-""" % (region)
-
-
+""" % (region) # noqa
 
 
 class ECSJoinCluster(UserData):
