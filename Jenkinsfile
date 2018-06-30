@@ -70,7 +70,7 @@ node {
                 withCredentials([usernamePassword(credentialsId: '***REMOVED***', passwordVariable: 'PW', usernameVariable: 'UN')]) {
                     //sleep to allow pypi to register the new version so we can install
                     echo "Sleeping for pypi to register latest tag"
-                    sleep(25)
+                    sleep(60)
                     //echo "Building tagged container image"
                     //// Build Latest Tag
                     //sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:${env.TAG_NAME} ."
