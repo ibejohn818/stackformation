@@ -641,7 +641,7 @@ class IAMUser(IAMBase):
             )
 
         for policy in self.policies:
-            policy._bind_role(t, self)
+            policy._bind_role(t, user)
 
         for arn in self.managed_policy_arns:
             user.ManagedPolicyArns.append(arn)

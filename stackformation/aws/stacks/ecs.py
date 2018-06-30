@@ -39,6 +39,11 @@ class TaskContainer(object):
                 'Task', TaskDefTemplate(
                     self.data.get('Image')))
 
+        if self.data.get('LogConfiguration'):
+            if self.data.get('LogConfiguration').get('Options').get('awslogs-group'):
+                self.stack.add_template_component(
+                    'Task', TaskDefTemplate(self.data.get('LogConfiguration').get('Options').get('awslogs-group')))
+
         self.stack.add_container(self)
 
     def jinja_txt(self, value):
@@ -52,6 +57,7 @@ class TaskContainer(object):
     def build(self, t):
 
         env = []
+        logConf = None
         data = deepcopy(self.data)
 
         if data.get('Environment'):
@@ -66,8 +72,24 @@ class TaskContainer(object):
         if data.get('Image'):
             data['Image'] = self.jinja_txt(data['Image'])
 
+        if data.get('LogConfiguration'):
+            logConf = ecs.LogConfiguration(
+                    LogDriver=data.get('LogConfiguration').get('LogDriver'),
+                    Options={}
+            )
+            if data.get('LogConfiguration').get('Options').get('awslogs-group'):
+                logConf.Options['awslogs-group'] = self.jinja_txt(data['LogConfiguration']['Options']['awslogs-group'])
+            if data.get('LogConfiguration').get('Options').get('awslogs-region'):
+                logConf.Options['awslogs-region'] = data['LogConfiguration']['Options']['awslogs-region']
+            if data.get('LogConfiguration').get('Options').get('awslogs-stream-prefix'):
+                logConf.Options['awslogs-stream-prefix'] = data['LogConfiguration']['Options']['awslogs-stream-prefix']
+            del data['LogConfiguration']
+
+
         ctr = ecs.ContainerDefinition(**data)
         ctr.Environment = env
+        if logConf is not None:
+            ctr.LogConfiguration = logConf
         return ctr
 
 
@@ -101,6 +123,7 @@ class ECSTaskStack(BaseStack):
         task = t.add_resource(ecs.TaskDefinition(
             '{}TaskDef'.format(self.stack_name),
             TaskRoleArn=Ref(task_role),
+            Family=self.stack_name,
             ExecutionRoleArn=Ref(exe_role),
             RequiresCompatibilities=[self.mode],
             NetworkMode=self.network_mode,
@@ -113,6 +136,13 @@ class ECSTaskStack(BaseStack):
         for c in self.containers:
             task.ContainerDefinitions.append(c.build(t))
 
+
+        t.add_output([
+            Output(
+                'TaskArn',
+                Value=Ref(task)
+            )
+        ])
         return t
 
 
