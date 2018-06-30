@@ -166,6 +166,9 @@ class CloudfrontStack(BaseStack):
 
     def add_errors(self, **kwargs):
         err = cloudfront.CustomErrorResponse()
+
+        err.ErrorCachingMinTTL = kwargs.get('ttl', 300)
+
         if kwargs.get('ErrorCode'):
             err.ErrorCode = kwargs.get('ErrorCode')
 

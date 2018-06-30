@@ -84,6 +84,27 @@ mount -a
         """.format(self.ebs_volume.name, self.path)  # noqa
 
 
+class SwapFile(UserData):
+
+    def __init__(self, size='1G', filename='/swapfile'):
+        self.size = size
+        self.filename = filename
+        super(SwapFile, self).__init__('SwapFile{}'.format(self.filename))
+
+    def render(self):
+        out = [
+           '',
+           '# Build & register swap file',
+           'fallocate -l {} {}'.format(self.size, self.filename),
+           'chmod 600 {}'.format(self.filename),
+           'mkswap {}'.format(self.filename),
+           'swapon {}'.format(self.filename),
+           '',
+        ]
+        return '\n'.join(out)
+
+
+
 class InstallSSMAgent(UserData):
     """Install the SSM Agent
     """

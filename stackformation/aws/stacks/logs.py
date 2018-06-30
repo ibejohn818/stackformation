@@ -24,7 +24,7 @@ class LogGroup(object):
     def build_group(self, t):
 
         group = t.add_resource(logs.LogGroup(
-            "{}LogGroup".format(self.name)
+            "{}LogGroup".format( self.name)
         ))
 
         t.add_output([

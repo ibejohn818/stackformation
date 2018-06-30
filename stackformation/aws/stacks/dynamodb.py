@@ -84,8 +84,8 @@ class DynamoTable(object):
         self.key_schema = kwargs.get('key_schema')
         self.attrs = kwargs.get('attrs', [])
         self.gsi = kwargs.get('gsi', [])
-        self.read_units = 1
-        self.write_units = 1
+        self.read_units = kwargs.get('read', 1)
+        self.write_units = kwargs.get('write', 1)
         self.use_table_name = False
         self.stream_spec = None
         self.resource = None
@@ -120,7 +120,7 @@ class DynamoTable(object):
                 idx_name = gsi['name']
                 smap.append({
                     'resource': ['table', Ref(self.resource), 'index/{}'.format(idx_name)], # noqa
-                    'name': idx_name.replace('-', ''),
+                    'name': "{}{}".format(self.name, idx_name.replace('-', '')),
                     'write_dim': "dynamodb:index:WriteCapacityUnits",
                     'read_dim': "dynamodb:index:ReadCapacityUnits"
                 })

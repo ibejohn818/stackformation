@@ -23,6 +23,7 @@ class BaseS3Bucket(object):
         self.stack = None
         self.cors_enabled = False
         self.cors_rules = []
+        self.policies = []
 
     def add_cors_rule(self, name, headers, methods, origins, age, **kwargs):
 
@@ -80,6 +81,17 @@ class S3Bucket(BaseS3Bucket):
 
         if self.public_read:
             s3b.AccessControl = s3.PublicRead
+            t.add_resource(s3.BucketPolicy(
+                '{}BucketPolicy'.format(self.name),
+                Bucket=Ref(s3b),
+                PolicyDocument= {
+                    "Statement":[{
+                        "Action":["s3:GetObject"],
+                        "Effect":"Allow",
+                        "Resource": Join('', ["arn:aws:s3:::", Ref(s3b), "/*"]),
+                        "Principal":"*"
+                        }]}
+                ))
 
         versioning = "Suspended"
 
