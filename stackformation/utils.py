@@ -35,7 +35,7 @@ def md5str(data):
     return m.hexdigest()
 
 
-def match_stack(selector, stack):
+def _match_stack(selector, stack):
     """Match stacks using selector as the comparison var.
     Strings prefixed with ^ will be treated as negative
 
@@ -73,6 +73,27 @@ def match_stack(selector, stack):
             result = False
 
     return result
+
+def match_stack(selector, stacks):
+
+    if selector is None:
+        return stacks
+
+    results = []
+
+    for k, v in enumerate(selector):
+        if k == 0:
+            canidates = stacks
+        else:
+            canidates = results
+
+        results = []
+        pos = True
+
+        for stack in canidates:
+            if v in stack.get_stack_name().lower():
+                results.append(stack)
+    return results
 
 
 def ensure_param(template, key, type='String', desc=None, default=None):

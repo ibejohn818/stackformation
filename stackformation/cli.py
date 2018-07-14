@@ -250,11 +250,7 @@ def stacks_list(selector=None, dependencies=False, remote=False):
 
     stacks = infra.list_stacks()
 
-    results = []
-
-    for stack in stacks:
-        if selector is None or match_stack(selector, stack):
-            results.append(stack)
+    results = match_stack(selector, stacks)
 
     stacks = results
 
@@ -311,11 +307,7 @@ def stacks_review(selector=None):
 
     stacks = infra.list_stacks()
 
-    results = []
-
-    for stack in stacks:
-        if match_stack(selector, stack):
-            results.append(stack)
+    results = match_stack(selector, stacks)
 
     for stack in results:
 

@@ -24,6 +24,15 @@ class BaseS3Bucket(object):
         self.cors_enabled = False
         self.cors_rules = []
         self.policies = []
+        self.lifecycle_rules = []
+
+    def add_expiration_rule(self, path, days=30, enabled=True):
+        lcr = s3.LifecycleRule(
+                ExpirationInDays=days,
+                Prefix=path,
+                Status=('Enabled' if enabled else 'Disabled')
+                )
+        self.lifecycle_rules.append(lcr)
 
     def add_cors_rule(self, name, headers, methods, origins, age, **kwargs):
 
@@ -115,6 +124,15 @@ class S3Bucket(BaseS3Bucket):
                 CorsRules=self.cors_rules
             )
             s3b.CorsConfiguration = cors
+
+        if len(self.lifecycle_rules) > 0:
+            s3b.LifecycleConfiguration=s3.LifecycleConfiguration(
+                    Rules=[]
+            )
+            for lcr in self.lifecycle_rules:
+                s3b.LifecycleConfiguration.Rules.append(lcr)
+
+
 
         t.add_output([
             Output(

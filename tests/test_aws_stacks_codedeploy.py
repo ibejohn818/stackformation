@@ -27,4 +27,4 @@ def test_app(test_infra):
     test_infra = test_infra['test_infra']
 
     cd_role = iam_stack.add_role(iam.CodeDeployRole('test'))
-    cd_stack = test_infra.add_stack(codedeploy.CodeDeployStack('test', cd_role))
+    cd_stack = test_infra.add_stack(codedeploy.CodeDeployStack('test'))
