@@ -23,9 +23,11 @@ class Deploy(object):
 
         defaults.update(kwargs)
 
-        for stack in infra.list_stacks(reverse=defaults['reverse']):
-            if len(selector) > 0 and not match_stack(selector, stack):
-                continue
+        stacks = infra.list_stacks(reverse=defaults['reverse'])
+
+        results = match_stack(selector, stacks)
+
+        for stack in results:
             c += 1
             print("Stack: {}{}/{}{}".format(
                 Fore.CYAN + Style.BRIGHT,
@@ -71,9 +73,9 @@ class SerialDeploy(Deploy):
 
         stacks = infra.get_stacks()
 
+        stacks = match_stack(selector, stacks)
+
         for stack in stacks:
-            if selector and not match_stack(selector, stack):
-                continue
 
             dependent_stacks = infra.get_dependent_stacks(stack)
 

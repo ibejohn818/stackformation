@@ -170,9 +170,9 @@ class DynamoTable(object):
                 ProjectionType=a['proj']['type']
             )
             if a['proj'].get('nka') and len(a['proj'].get('nka')) > 0:
-                gsi.Projection.Projection.NonKeyAttributes = []
+                gsi.Projection.NonKeyAttributes = []
                 for aa in a['proj'].get('nka'):
-                    gsi.Projection.Projection.NonKeyAttributes.append(aa)
+                    gsi.Projection.NonKeyAttributes.append(aa)
 
             gsi.ProvisionedThroughput = dynamodb.ProvisionedThroughput(
                 ReadCapacityUnits=a['read_units'],
