@@ -1,6 +1,6 @@
 from stackformation.aws.stacks import BaseStack
 from stackformation.aws.stacks import TemplateComponent
-from stackformation.aws.stacks import dynamodb
+from stackformation.aws.stacks import dynamodb, sqs
 from troposphere import (sns, iam, awslambda)
 import awacs.kms
 import awacs.sns
@@ -126,6 +126,22 @@ class BaseLambda(BaseStack):
             self._s3 = self.infra.boto_session.client('s3')
         return self._s3
 
+class Permission(object):
+
+    def __init__(self, action, principal):
+        self.action = actions
+        self.principal = principal
+        self.stack = None
+
+    def build(self, t, func, key):
+
+        perm = t.add_resource(awslambda.Permission(
+            '{}Perm'.format(key),
+            Action=self.action,
+            Principal=self.principal,
+            FunctionName=Ref(func)
+        ))
+
 
 class LambdaStack(BaseLambda):
     """Lambda function stack
@@ -156,6 +172,10 @@ class LambdaStack(BaseLambda):
         self.vpc_stack = kwargs.get('vpc_stack', None)
         self.public_subnet = kwargs.get('public_subnet', True)
         self.security_groups = []
+        self.perms = []
+
+    def add_perm(self, perm):
+        self.perms.append(perm)
 
     def add_security_group(self, group):
         self.security_groups.append(group)
@@ -170,8 +190,10 @@ class LambdaStack(BaseLambda):
         for k, v in dct.items():
             self.add_env_var(k, v)
 
-    def add_event_source(self, source):
-        self.event_sources.append(source)
+    def add_event_source(self, source, **kw):
+        self.event_sources.append({
+            'src': source,
+            'args': kw})
 
     def add_alias(self, name, version='$LATEST'):
         self.aliases.append({'name': name, 'version': version})
@@ -264,7 +286,9 @@ class LambdaStack(BaseLambda):
                 ))
 
         if len(self.event_sources) > 0:
-            for src in self.event_sources:
+            for s in self.event_sources:
+                src=s['src']
+                args=s['args']
                 if isinstance(src, dynamodb.DynamoTable):
                     p = t.add_parameter(Parameter(
                         src.output_stream(),
@@ -276,6 +300,20 @@ class LambdaStack(BaseLambda):
                         EventSourceArn=Ref(p),
                         StartingPosition='LATEST'
                     ))
+                if isinstance(src, sqs.Queue):
+                    p = t.add_parameter(Parameter(
+                        src.output_queue_arn(),
+                        Type='String'
+                    ))
+                    t.add_resource(awslambda.EventSourceMapping(
+                        'LambdaSQS{}'.format(src.name),
+                        FunctionName=Ref(func),
+                        EventSourceArn=Ref(p),
+                        BatchSize=args.get('BatchSize', 1)
+                    ))
+
+        for k, v in enumerate(self.perms):
+            v.build(t, funv, k)
 
         t.add_output([
             Output(

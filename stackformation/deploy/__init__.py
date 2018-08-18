@@ -1,6 +1,6 @@
 import time
 import logging
-from stackformation.utils import (match_stack)
+from stackformation.utils import (match_stack, _match_stack)
 from colorama import Fore, Back, Style  # noqa
 
 
@@ -52,7 +52,7 @@ class Deploy(object):
         stacks = infra.list_stacks(reverse=True)
 
         for stack in stacks:
-            if selector and not match_stack(selector, stack):
+            if selector and not _match_stack(selector, stack):
                 continue
 
             start = stack.start_destroy(infra, stack.infra.context)

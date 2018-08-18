@@ -126,6 +126,9 @@ class DynamoTable(object):
                 })
         return smap
 
+    def __lt__(self, other):
+        return self.name < other.name
+
     def build_table(self, t):
 
         tbl = t.add_resource(dynamodb.Table(
@@ -314,6 +317,6 @@ class DynamoDBStack(BaseStack):
             for i in range(len(chunks)):
                 if i > 0:
                     for tab in chunks[i]:
-                        tab.table_resource.DependsOn = \
-                            chunks[i - 1][0].table_resource.name
+                        tab.resource.DependsOn = \
+                            chunks[i - 1][0].resource.name
         return t
