@@ -80,4 +80,6 @@ def test_s3_fullaccess(test_infra):
 
     user.add_policy(iam.S3FullBucketAccess(bucket))
 
-
+    with pytest.raises(TypeError) as e:
+        iam.S3FullBucketAccess({})
+    assert "Object" in str(e)

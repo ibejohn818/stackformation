@@ -1,4 +1,4 @@
-from stackformation.aws.stacks import BaseStack
+from stackformation.aws.stacks import BaseStack, s3
 from awacs import aws
 import awacs.sts
 import awacs.s3
@@ -310,12 +310,16 @@ class SqsAll(IAMPolicy):
 class S3FullBucketAccess(IAMPolicy):
 
     def __init__(self, bucket):
-
         self.buckets = []
         self.add_bucket(bucket)
 
     def add_bucket(self, bucket):
-        self.buckets.append(bucket)
+        if not isinstance(bucket, list):
+            bucket = [bucket]
+        for b in bucket:
+            if not isinstance(b, s3.S3Bucket):
+                raise TypeError("Object much be s3.S3Bucket")
+        self.buckets += bucket
 
     def _bind_role(self, t, r):
         brefs = []
