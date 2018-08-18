@@ -427,7 +427,7 @@ def destroy(selector):
 
     deploy = dep.SerialDeploy()
 
-    if not deploy.cli_confirm(
+    if not deploy.cli_confirm_legacy(
             infra,
             selector,
             ask='Are you sure you want to destroy these stack(s)?',

@@ -31,9 +31,18 @@ class Queue(object):
             '{}Queue'.format(self.name),
             Value=Ref(q)
         ))
+        t.add_output(Output(
+            '{}QueueArn'.format(self.name),
+            Value=GetAtt(q, 'Arn')
+        ))
 
     def output_queue(self):
         return "{}{}Queue".format(
+            self.stack.get_stack_name(),
+            self.name)
+
+    def output_queue_arn(self):
+        return "{}{}QueueArn".format(
             self.stack.get_stack_name(),
             self.name)
 

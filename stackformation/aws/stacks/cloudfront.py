@@ -8,6 +8,7 @@ from troposphere import (  # noqa
 import troposphere.cloudfront as cloudfront
 from stackformation.aws.stacks import (s3, apigateway, elb, ec2) # noqa
 from troposphere.cloudfront import (Cookies, ForwardedValues)
+from stackformation.utils import ensure_param
 
 DEF_COOKIE = Cookies(
     Forward='all'
@@ -111,8 +112,9 @@ class Origin(object):
         self.name = name
         self.origin = origin
         self.path = kwargs.get('path', '')
-        self.origin_timeout = 30
+        self.origin_timeout = kwargs.get('timeout', 30)
         self.origin_proto = kwargs.get('origin_proto', 'match-viewer')
+        self.ssl_protocols = ['TLSv1.1', 'TLSv1.2']
 
     def get_id(self):
         return self.name
@@ -129,10 +131,7 @@ class Origin(object):
                 Type='String'
             ))
         elif isinstance(self.origin, apigateway.SwaggerApiStack):
-            domain_ref = t.add_parameter(Parameter(
-                self.origin.output_url(),
-                Type='String'
-            ))
+            domain_ref = ensure_param(t, self.origin.output_url())
         else:
             domain_ref = t.add_parameter(Parameter(
                 'Input{}Origin'.format(self.name),
@@ -141,7 +140,9 @@ class Origin(object):
 
         co = cloudfront.CustomOrigin(
             OriginReadTimeout=self.origin_timeout,
-            OriginProtocolPolicy='match-viewer')
+            OriginProtocolPolicy=self.origin_proto,
+            OriginSSLProtocols=self.ssl_protocols
+            )
 
         o.CustomOriginConfig = co
         o.DomainName = Ref(domain_ref)

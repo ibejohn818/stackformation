@@ -213,7 +213,6 @@ class BaseStack(StackComponent):
             s3.head_bucket(Bucket=bucket_name)
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == '404':
-                # TODO: add lifecycle policy to keep this bucket clean
                 s3.create_bucket(
                     Bucket=bucket_name, CreateBucketConfiguration={
                         'LocationConstraint': infra.boto_session.get_conf('region_name')}, )
@@ -226,9 +225,12 @@ class BaseStack(StackComponent):
         )
 
         # this is what CF wants for the url
-        return 'https://s3.amazonaws.com/{}/{}.json'.format(
+        uri = 'https://s3.amazonaws.com/{}/{}.json'.format(
             bucket_name, name
         )
+
+        logger.info("Template Uploaded to s3: {}".format(uri))
+        return uri
 
     def start_deploy(self, infra, context):
         """
