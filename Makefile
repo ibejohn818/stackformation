@@ -68,7 +68,7 @@ flake8: ## Run flake8 check ( Docker )
 		-v $(shell pwd):$(shell pwd) -w \
 		$(shell pwd) stackformation:test flake8 stackformation/
 
-coverage-term: clean flake8 ## test coverage terminal report ( Docker )
+coverage-term: clean ##flake8 ## test coverage terminal report ( Docker )
 	docker build -f Dockerfile-test -t stackformation:test .
 	docker run --rm -it \
 		-v $(shell pwd):$(shell pwd) -w \
