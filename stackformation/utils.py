@@ -76,7 +76,7 @@ def _match_stack(selector, stack):
 
 def match_stack(selector, stacks):
 
-    if selector is None:
+    if selector is None or len(selector) <=0:
         return stacks
 
     results = []

@@ -47,7 +47,28 @@ class Deploy(object):
 
         return False
 
-    def destroy(self, infra, selector=False, **kwargs):
+    def destroy(self, infra, selector=False, **kw):
+
+
+        stacks = infra.list_stacks(reverse=True)
+
+        stacks = match_stack(selector, stacks)
+
+        for stack in stacks:
+
+            try:
+                start = stack.start_destroy(infra, stack.infra.context)
+                if not start:
+                    print("{} Skipping destroy..".format(stack.get_stack_name()))
+            except Exception as e:
+                print(str(e))
+                continue
+            time.sleep(2)
+            while stack.deploying(infra):
+                pass
+            logger.info("DESTROY COMPLETE: {}".format(stack.get_stack_name()))
+
+    def __destroy(self, infra, selector=False, **kwargs):
 
         stacks = infra.list_stacks(reverse=True)
 
