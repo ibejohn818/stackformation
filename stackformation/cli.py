@@ -403,7 +403,7 @@ def stacks_review(selector=None):
 
 @stacks.command(help='Deploy stacks')
 @click.argument('selector', nargs=-1)
-def deploy(selector):
+def deploy(selector=False):
 
     selector = list(selector)
 
@@ -419,7 +419,7 @@ def deploy(selector):
 
 @stacks.command(help='Destroy stacks')
 @click.argument('selector', nargs=-1)
-def destroy(selector):
+def destroy(selector=False):
 
     selector = list(selector)
 
@@ -427,7 +427,7 @@ def destroy(selector):
 
     deploy = dep.SerialDeploy()
 
-    if not deploy.cli_confirm_legacy(
+    if not deploy.cli_confirm(
             infra,
             selector,
             ask='Are you sure you want to destroy these stack(s)?',

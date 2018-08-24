@@ -227,4 +227,14 @@ class CloudfrontStack(BaseStack):
         if len(self.errors) > 0:
             dist.DistributionConfig.CustomErrorResponses = self.errors
 
+        t.add_output([
+            Output(
+                'DistID',
+                Value=Ref(dist)
+            )
+        ])
+
         return t
+
+    def output_id(self):
+        return "{}DistID".format(self.get_stack_name())
