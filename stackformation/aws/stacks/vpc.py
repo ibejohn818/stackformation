@@ -744,6 +744,8 @@ class VPCRoutesStack(BaseStack):
     """Create additional VPC Routes
     """
 
-    def __init__(self, name=""):
-        self.stack_name = name
+    def __init__(self, vpc, name=""):
         super(VPCRoutesStack, self).__init__('VPCRoutes', 31)
+
+        self.stack_name = name
+        self.vpc = vpc

@@ -1,4 +1,5 @@
 from stackformation.aws.stacks import (BaseStack)
+from stackformation.utils import ensure_param
 from troposphere import rds
 from troposphere import (  # noqa
     FindInMap, GetAtt, Join,
@@ -7,6 +8,67 @@ from troposphere import (  # noqa
     GetAZs, Export
 )
 
+class RDSBase(BaseStack):
+
+    def __init__(self, name, vpc, **kw):
+        self.public = kw.get('public', False)
+        self.vpc = vpc
+        self.params = {}
+        self.db_type = kw.get('db_type', None)
+        self.db_version = kw.get('db_version', None)
+        super(RDSBase, self).__init__(name, 700)
+
+    def _db_params(self, t):
+
+        params = t.add_resource(rds.DBParameterGroup(
+            '{}RDSParamGroup'.format(self.stack_name),
+            Family='{}{}'.format(self.db_type, self.db_version),
+            Description="ParamGroup for {}".format(self.stack_name),
+            Parameters=self.params
+        ))
+        return params
+
+    def _subnet_group(self, t):
+
+        if self.public:
+            sn_list = self.vpc.output_public_subnets()
+        else:
+            sn_list = self.vpc.output_private_subnets()
+
+        sn_group = t.add_resource(rds.DBSubnetGroup(
+            '{}RDSSubnetGroup'.format(self.stack_name),
+            DBSubnetGroupDescription='{} Subnet Group'.format(
+                self.stack_name),
+            SubnetIds=subnet_refs
+        ))
+
+        return sn_group
+
+
+class RDSClusterStack(RDSBase):
+
+    def __init__(self, name, vpc, **kw):
+
+        super(RDSClusterStack, self).__init__('RDSCluster', vpc, **kw)
+        self.stack_name = name
+        self.vpc = vpc
+        self.multiaz = False
+        self.serverless = False
+
+    def build_template(self):
+
+        t = self._init_template()
+
+        backup_retention = t.add_parameter(Parameter(
+            'InputBackupRetentionPeriod',
+            Type='String',
+            Default='7'
+        ))
+
+
+
+
+        return t
 
 class RDSStack(BaseStack):
 
