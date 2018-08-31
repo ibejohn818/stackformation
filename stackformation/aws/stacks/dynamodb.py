@@ -89,6 +89,7 @@ class DynamoTable(object):
         self.use_table_name = False
         self.stream_spec = None
         self.resource = None
+        self.pitr_enabled = False
         self.scaling_params = {
             'read': SCALING_DEFS,
             'write': SCALING_DEFS
@@ -136,6 +137,9 @@ class DynamoTable(object):
             ProvisionedThroughput=dynamodb.ProvisionedThroughput(
                 ReadCapacityUnits=self.read_units,
                 WriteCapacityUnits=self.write_units
+            ),
+            PointInTimeRecoverySpecification=dynamodb.PointInTimeRecoverySpecification(
+                PointInTimeRecoveryEnabled=self.pitr_enabled
             )
         ))
 
