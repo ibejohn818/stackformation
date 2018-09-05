@@ -1,6 +1,6 @@
 boto3==1.7.26
 Click==6.7
-troposphere==2.3.0
+troposphere==2.3.3
 awacs==0.7.2
 jinja2==2.10
 inflection==0.3.1
