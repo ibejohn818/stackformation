@@ -74,7 +74,7 @@ def _match_stack(selector, stack):
 
     return result
 
-def match_stack(selector, stacks):
+def ______match_stack(selector, stacks):
 
     if selector is None or len(selector) <=0:
         return stacks
@@ -95,6 +95,30 @@ def match_stack(selector, stacks):
                 results.append(stack)
     return results
 
+def match_stack(selector, stacks):
+
+    if selector is None or len(selector) <=0:
+        return stacks
+    res = []
+    for stk in stacks:
+        sn = stk.get_remote_stack_name()
+        if chk_match(selector, sn):
+            res.append(stk)
+    return res
+
+
+def chk_match(selectors, name):
+
+    for slc in selectors:
+        slc = slc.lower()
+        if slc.startswith('^'):
+            slc = slc[1:]
+            if slc in name:
+                return False
+        elif slc not in name:
+            return False
+
+    return True
 
 def ensure_param(template, key, type='String', desc=None, default=None):
 

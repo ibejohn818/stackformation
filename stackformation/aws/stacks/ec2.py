@@ -9,6 +9,7 @@ from troposphere import (  # noqa
     Select, Tags, Template,
     GetAZs, Export, Base64
 )
+from stackformation.utils import ensure_param
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class EC2Stack(BaseStack):
         self.use_key = None
         self.volumes = []
         self._ami = None
-        self.eip = None,
+        self.eip = None
 
         # eth0 is always managed by the stack
         self.network_interfaces = [
@@ -258,6 +259,14 @@ class EC2Stack(BaseStack):
 
         if self.use_key:
             instance.KeyName = self.use_key
+
+        if self.eip is not None:
+            eip_ref = ensure_param(t, self.eip.output_allocation_id())
+            t.add_resource(ec2.EIPAssociation(
+                '{}EIPAssoc'.format(self.stack_name),
+                InstanceId=Ref(instance),
+                AllocationId=Ref(eip_ref)
+            ))
 
         t.add_output([
             Output(
