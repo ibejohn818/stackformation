@@ -83,13 +83,18 @@ class Behavior(object):
             'AllowedMethods': self.allowed_methods,
             'CachedMethods': self.cache_methods,
             'Compress': self.compress,
-            'DefaultTTL': self.default_ttl,
-            'MaxTTL': self.max_ttl,
-            'MinTTL': self.min_ttl,
+
             'ForwardedValues': fw,
             'SmoothStreaming': self.streaming,
             'TargetOriginId': self.origin_id,
         }
+
+        if self.default_ttl is not None:
+            kw['DefaultTTL']= self.default_ttl
+        if self.max_ttl is not None:
+            kw['MaxTTL']= self.max_ttl
+        if self.min_ttl is not None:
+            kw['MinTTL']= self.min_ttl
 
         if self.force_https:
             kw['ViewerProtocolPolicy'] = 'redirect-to-https'
