@@ -448,13 +448,9 @@ def template(selector, yaml):
 
     stacks = infra.list_stacks()
 
-    results = []
+    stacks = match_stack(selector, stacks)
 
     for stack in stacks:
-        if match_stack(selector, stack):
-            results.append(stack)
-
-    for stack in results:
 
         t = stack.build_template()
 
