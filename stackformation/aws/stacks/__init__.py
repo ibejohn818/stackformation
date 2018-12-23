@@ -281,6 +281,13 @@ class BaseStack(StackComponent):
         # print(json.dumps(dep_kw, indent=True))
         # exit(1)
 
+        dep_kw['Tags'] = [
+            {
+                'Key': 'Stackformation',
+                'Value': stackformation.__version__
+            }
+        ]
+
         try:
             if present:
                 cf.update_stack(**dep_kw)
