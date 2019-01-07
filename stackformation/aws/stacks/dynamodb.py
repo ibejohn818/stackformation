@@ -97,6 +97,8 @@ class DynamoTable(object):
         self.autoscaling = kwargs.get('autoscaling', False)
         self.scale_gsi = kwargs.get('scale_gsi', False)
         self.scaling_role = kwargs.get('scaling_role', None)
+        self.ttl_column = None
+        self.ttl_enabled = False
 
     def set_scaling_param(self, key, val, type=None):
         if type is None:
@@ -145,6 +147,12 @@ class DynamoTable(object):
 
         if self.use_table_name:
             tbl.TableName = self.name
+
+        if self.ttl_column is not None:
+            tbl.TimeToLiveSpecification = dynamodb.TimeToLiveSpecification(
+                AttributeName=self.ttl_column,
+                Enabled=self.ttl_enabled
+            )
 
         tbl.KeySchema = [
             dynamodb.KeySchema(
