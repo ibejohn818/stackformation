@@ -10,6 +10,8 @@ node {
 
         //def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
         def img_tag =  "stackformationjenkins"
+        def lib = library('shared-pipelines').com.ibejohn818.stackformation.pipeline
+
         stage("Stage Repo") {
             echo "Checkout repo"
             checkout scm
@@ -27,7 +29,7 @@ node {
 
         stage("Send Code Coverage") {
             if (currentBuild.result == "SUCCESS") {
-                @Library("shared-pipelines").com.ibejohn818.stackformation.pipeline.coverage()
+                lib.coverage()
             } else {
                 echo "Skipping coverage report..."
             }
