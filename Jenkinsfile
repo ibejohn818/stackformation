@@ -20,7 +20,6 @@ node {
 
         stage("Build Test Image") {
             sh "docker build -f Dockerfile-test -t ${img_tag} ."
-            echo sh(returnStdout: true, script: 'env')
         }
 
         stage("Run Tests") {
@@ -44,27 +43,10 @@ node {
 
         if (env.TAG_NAME) {
             stage("Publish To PyPi") {
-
                 stackformation.publishPypi(env.WORKSPACE, img_tag)
-
             }
             stage("Push Tag to DockerHub") {
-                withCredentials([usernamePassword(credentialsId: 'ibejohn818Dockerhub', passwordVariable: 'PW', usernameVariable: 'UN')]) {
-                    //sleep to allow pypi to register the new version so we can install
-                    echo "Sleeping for pypi to register latest tag"
-                    sleep(60)
-                    //echo "Building tagged container image"
-                    //// Build Latest Tag
-                    //sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:${env.TAG_NAME} ."
-                    //echo "Push to docker hub Tagged"
-                    //sh "docker login --username ${env.UN} --password ${env.PW}"
-                    //sh "docker push ibejohn818/stackformation:${env.TAG_NAME}"
-                    // Build the tagged and push as latest
-                    sh "docker build -f Dockerfile-tagged -t ibejohn818/stackformation:latest ."
-                    echo "Push to docker hub as latest"
-                    sh "docker login --username ${env.UN} --password ${env.PW}"
-                    sh "docker push ibejohn818/stackformation:latest"
-                }
+                stackformation.tagDockerHub()
             }
         }
 
