@@ -27,11 +27,7 @@ node {
 
         stage("Send Code Coverage") {
             if (currentBuild.result == "SUCCESS") {
-                echo "Sending Coverage Report..."
-                withCredentials([[$class: 'StringBinding', credentialsId: 'StackformationCodecov', variable: 'CODECOV']]) {
-                    echo "KEY: ${env.CODECOV}"
-                    sh "curl -s https://codecov.io/bash | bash -s - -t ${env.CODECOV}"
-                }
+                @Library("shared-pipelines").com.ibejohn818.stackformation.pipeline.coverage()
             } else {
                 echo "Skipping coverage report..."
             }
