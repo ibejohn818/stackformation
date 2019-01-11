@@ -29,7 +29,7 @@ node {
 
         stage("Send Code Coverage") {
             if (currentBuild.result == "SUCCESS") {
-                stackformationCoverage()
+                stackformation.coverage()
             } else {
                 echo "Skipping coverage report..."
             }
