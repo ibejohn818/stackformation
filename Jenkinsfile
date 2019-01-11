@@ -38,13 +38,7 @@ node {
 
         if (env.BRANCH_NAME == "master") {
             stage("Push latest to DockerHub") {
-                withCredentials([usernamePassword(credentialsId: '***REMOVED***', passwordVariable: 'PW', usernameVariable: 'UN')]) {
-                    // Build Latest Tag
-                    sh "docker build -t ibejohn818/stackformation:master ."
-                    echo "Push to docker hub"
-                    sh "docker login --username ${env.UN} --password ${env.PW}"
-                    sh "docker push ibejohn818/stackformation:master"
-                }
+                stackformation.masterDockerHub()
             }
         }
 
