@@ -10,6 +10,9 @@ node {
 
         //def img_tag = "${env.BRANCH_NAME.toLowerCase()}${env.BUILD_ID}"
         def img_tag =  "stackformationjenkins"
+        // load shared jenkins code
+        @Library('shared-pipelines')_
+
         stage("Stage Repo") {
             echo "Checkout repo"
             checkout scm
@@ -27,11 +30,7 @@ node {
 
         stage("Send Code Coverage") {
             if (currentBuild.result == "SUCCESS") {
-                echo "Sending Coverage Report..."
-                withCredentials([[$class: 'StringBinding', credentialsId: '***REMOVED***', variable: 'CODECOV']]) {
-                    echo "KEY: ${env.CODECOV}"
-                    sh "curl -s https://codecov.io/bash | bash -s - -t ${env.CODECOV}"
-                }
+                stackformation.coverage()
             } else {
                 echo "Skipping coverage report..."
             }
