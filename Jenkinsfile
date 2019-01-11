@@ -45,18 +45,7 @@ node {
         if (env.TAG_NAME) {
             stage("Publish To PyPi") {
 
-                echo "Cleaning"
-                sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} make clean"
-                echo "Build DIST Package"
-                sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} python3 setup.py sdist"
-
-                withCredentials([usernamePassword(credentialsId: 'ibejohn818PyPi', passwordVariable: 'PYPIPASSWD', usernameVariable: 'PYPIUSER')]) {
-                    echo "Send to PyPi"
-
-                    def dist_name = "jh-stackformation-${env.TAG_NAME}.tar.gz"
-
-                    sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} ${img_tag} twine upload dist/${dist_name} -u ${env.PYPIUSER} -p ${env.PYPIPASSWD}"
-                }
+                stackformation.publishPypi(env.WORKSPACE, img_tag)
 
             }
             stage("Push Tag to DockerHub") {
