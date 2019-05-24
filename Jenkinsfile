@@ -37,7 +37,11 @@ node {
 
         if (env.BRANCH_NAME == "master") {
             stage("Push latest to DockerHub") {
-                stackformation.masterDockerHub()
+                if (currentBuild.result == "SUCCESS") {
+                    stackformation.masterDockerHub()
+                } else {
+                    echo "Skipping push to DockerHub"
+                }
             }
         }
 
