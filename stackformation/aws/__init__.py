@@ -33,6 +33,13 @@ ANSIBLE_INSTALL = {
         'sudo yum install -y git gcc make python-setuptools lib-tool',
         'sudo easy_install pip',
         'sudo pip install ansible'
+    ],
+    'awslinux2': [
+        # 'sudo yum-config-manager --enable epel',
+        'sudo amazon-linux-extras install epel',
+        'sudo yum install -y git gcc make python-setuptools lib-tool',
+        'sudo easy_install pip',
+        'sudo pip install ansible'
     ]
 }
 
@@ -57,6 +64,19 @@ AMI_INFO = {
             {
                 'Name': 'description',
                 'Values': ["*Linux*"]
+            },
+        ]
+    },
+    'awslinux2': {
+        'username': 'ec2-user',
+        'ami_filters': [
+            {
+                'Name': 'name',
+                'Values': ['amzn2-ami*x86_64-gp2']
+            },
+            {
+                'Name': 'description',
+                'Values': ["*Linux 2*"]
             },
         ]
     }
@@ -93,6 +113,7 @@ class PackerImage(object):
     def get_ssh_user(self):
         users = {
             'awslinux': 'ec2-user',
+            'awslinux2': 'ec2-user',
             'ubuntu': 'ubuntu',
             'centos': 'root',
         }
