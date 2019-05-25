@@ -23,7 +23,7 @@ node {
         }
 
         stage("Run Tests") {
-            sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} -ujhardy ${img_tag} python3 setup.py covxml"
+            sh "docker run --rm -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE} -v /etc/passwd:/etc/passwd:ro -ujhardy ${img_tag} python3 setup.py covxml"
             sh "chmod -R 777 ${env.WORKSPACE}"
             currentBuild.result = "SUCCESS"
         }
