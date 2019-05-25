@@ -9,7 +9,7 @@ import stackformation.utils as utils
 
 __author__ = """John Hardy"""
 __email__ = 'john@johnchardy.com'
-__version__ = '0.2.39'
+__version__ = '0.2.40'
 
 logger = logging.getLogger(__name__)
 
