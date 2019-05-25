@@ -36,10 +36,12 @@ ANSIBLE_INSTALL = {
     ],
     'awslinux2': [
         # 'sudo yum-config-manager --enable epel',
-        'sudo amazon-linux-extras install epel',
+        "/bin/echo 'repo_upgrade: none' | sudo tee -a /etc/cloud/cloud.cfg.d/disable-yum.conf",
+        'sudo amazon-linux-extras install epel -y',
         'sudo yum install -y git gcc make python-setuptools lib-tool',
         'sudo easy_install pip',
-        'sudo pip install ansible'
+        'sudo pip install ansible',
+        'sudo yum update -y',
     ]
 }
 

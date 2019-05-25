@@ -236,10 +236,17 @@ class CloudfrontStack(BaseStack):
             Output(
                 'DistID',
                 Value=Ref(dist)
-            )
+            ),
+            Output(
+                'DNS',
+                Value=GetAtt(dist, 'DomainName')
+            ),
         ])
 
         return t
 
     def output_id(self):
         return "{}DistID".format(self.get_stack_name())
+
+    def output_dns(self):
+        return "{}DNS".format(self.get_stack_name())

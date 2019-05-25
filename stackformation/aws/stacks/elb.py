@@ -138,6 +138,15 @@ class ELBStack(BaseStack):
             Output(
                 '{}ELB'.format(self.stack_name),
                 Value=Ref(lb)
+            ),
+            Output(
+                '{}HostedZoneId'.format(self.stack_name),
+                Description='LoadBalancer Hosted Zone Id',
+                Value=GetAtt(lb.title, 'CanonicalHostedZoneNameID')
+            ),
+            Output(
+                '{}DNSName'.format(self.stack_name),
+                Value=GetAtt(lb , 'DNSName')
             )
         ])
 
@@ -145,3 +154,9 @@ class ELBStack(BaseStack):
 
     def output_elb(self):
         return "{}{}ELB".format(self.get_stack_name(), self.stack_name)
+
+    def output_hosted_zone(self):
+        return "{}{}HostedZoneId".format(self.get_stack_name(), self.stack_name)
+
+    def output_dns_name(self):
+        return "{}{}DNSName".format(self.get_stack_name(), self.stack_name)

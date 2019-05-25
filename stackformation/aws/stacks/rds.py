@@ -112,6 +112,11 @@ class RDSStack(BaseStack):
             self.stack_name
         )
 
+    def output_endpoint(self):
+        return "{}{}Endpoint".format(
+            self.get_stack_name(),
+            self.stack_name)
+
     def build_template(self):
 
         t = self._init_template()
@@ -202,6 +207,10 @@ class RDSStack(BaseStack):
             Output(
                 '{}RDSInstance'.format(self.stack_name),
                 Value=Ref(db)
+            ),
+            Output(
+                '{}Endpoint'.format(self.stack_name),
+                Value=GetAtt(db, 'Endpoint.Address')
             )
         ])
 

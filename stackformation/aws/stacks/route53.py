@@ -1,5 +1,6 @@
 from stackformation import (BaseStack)
-from stackformation.aws.stacks import (eip)
+from stackformation.aws.stacks import (eip, rds)
+from stackformation.utils import ensure_param
 import inflection
 import re
 from troposphere import route53
@@ -13,121 +14,187 @@ from troposphere import (  # noqa
 
 class Record(object):
 
-    def __init__(self, name, value):
+    def __init__(self, name, value, **kw):
 
         self.name = name
-        self.ttl = str(3600)
-        self.stack = None
-        self.weight = 0
         self.value = value
-
-    def set_ttl(self, val):
-        self.ttl = str(val)
+        self.ttl = kw.get('ttl', str(3600))
+        self.stack = None
+        self.weight = kw.get('weight', 0)
+        self.type = None
 
     def _safe_dns_name(self, name):
         return name.replace(".", "")
 
-    def _return_resource_param(self, template):
-
-        param_type = ""
-        param_name = ""
-
-        if isinstance(self.value, eip.EIP):
-            param_name = self.value.output_eip()
-            param_type = "String"
-        elif self._is_ip(self.value):
-            input_name = "Input{}ARecordValue".format(self.stack.stack_name)
-            self.stack.infra.add_var({
-                input_name: self.value
-            })
-            param_name = input_name
-            param_type = "String"
-
-        return template.add_parameter(Parameter(
-            param_name,
-            Type=param_type
-        ))
-
     def add_to_template(self, template):
-        raise Exception("must implement add_to_template()")
 
+        res = self.value
 
-class ARecord(Record):
-
-    def _is_ip(self, ip):
-
-        if not isinstance(ip, (str)):
-            return False
-
-        return re.match(
-            '^([0-9]){,3}(\.)([0-9]){,3}(\.)([0-9]){,3}(\.)([0-9]){,3}$', ip)
-
-    def add_to_template(self, template, zoneRecord):
+        if not isinstance(res, list):
+            res = [res]
 
         record = route53.RecordSet(
             '{}ARecord'.format(self._safe_dns_name(self.name)),
-            Name="{}".format(zoneRecord.Name),
-            Type="A",
+            Name="{}{}.".format(self.name, self.stack.domain_name),
+            Type=self.type,
             TTL=self.ttl,
-            Weight=self.weight
+            ResourceRecords=res
         )
-
-        param = self._return_resource_param(template)
-
-        record.ResourceRecords = [Ref(param)]
 
         return record
 
+class ARecord(Record):
 
-class CName(object):
-    pass
+    def __init__(self, name, value, **kw):
+        super().__init__(name, value, **kw)
+        self.type = "A"
+
+
+
+
+class GoogleMX(Record):
+
+    def __init__(self, name, **kw):
+
+        super().__init__(name, [
+            '1 ASPMX.L.GOOGLE.COM.',
+            '5 ALT1.ASPMX.L.GOOGLE.COM.',
+            '5 ALT2.ASPMX.L.GOOGLE.COM.',
+            '10 ALT3.ASPMX.L.GOOGLE.COM.',
+            '10 ALT4.ASPMX.L.GOOGLE.COM.'
+        ], **kw)
+        self.type='MX'
+
+
+class Elb(Record):
+
+    def add_to_template(self, t):
+        """
+        """
+        zone_param = ensure_param(t, self.value[0].output_hosted_zone(), 'String')
+        dns_param = ensure_param(t, self.value[0].output_dns_name(), 'String')
+        r = route53.RecordSet(
+            '{}ELBRecord'.format(self._safe_dns_name(self.name)),
+            Name="{}{}".format(self.name, self.stack.domain_name),
+            Type="A",
+            AliasTarget=route53.AliasTarget(
+                HostedZoneId=Ref(zone_param),
+                DNSName=Ref(dns_param)
+            )
+        )
+
+        return r
+
+class CName(Record):
+
+    def __init__(self, name, value, **kw):
+        super().__init__(name, value, **kw)
+        self.type = 'CNAME'
+
+
+class Rds(CName):
+
+    def add_to_template(self, t):
+
+        dns_param = ensure_param(t, self.value[0].output_endpoint(), 'String')
+        r = route53.RecordSet(
+            '{}RDSRecord'.format(self._safe_dns_name(self.name)),
+            Name="{}{}".format(self.name, self.stack.domain_name),
+            Type="CNAME",
+            TTL=self.ttl,
+            ResourceRecords=[Ref(dns_param)]
+        )
+
+        return r
+
+class Txt(Record):
+
+    def __init__(self, name, value, **kw):
+        super().__init__(name, value, **kw)
+        self.type = 'TXT'
 
 
 class Route53Stack(BaseStack):
 
-    def __init__(self, domain_name):
+    def __init__(self, name, domain_name, **kw):
 
-        super(Route53Stack, self).__init__('Route53', 800)
+        super(Route53Stack, self).__init__('Route53', 900)
 
-        self.stack_name = inflection.camelize(domain_name.replace(".", "_"))
+        self.stack_name = name
         self.domain_name = domain_name
-        self.public = True
+        self.vpc = kw.get('vpc', None)
         self.records = []
 
     def add_record(self, record):
         record.stack = self
         self.records.append(record)
+        return record
 
-    def set_public(self, val):
-        self.public = val
+    def add_a(self, name, ip, **kw):
+        a = ARecord(name, ip, **kw)
+        self.add_record(a)
+        return a
+
+    def add_alias(self, name, stack, **kw):
+        pass
+
+    def add_google_mx(self, name, **kw):
+        g = GoogleMx(name)
+        self.add_record(q)
+        return g
+
+    def add_elb(self, name, stack, **kw):
+        elb = Elb(name, stack, **kw)
+        self.add_record(elb)
+        return elb
+
+    def add_cname(self, name, value, **kw):
+        c = CName(name, value, **kw)
+        self.add_record(c)
+        return c
+
+    def add_txt(self, name, value, **kw):
+        txt = Txt(name, value, **kw)
+        self.add_record(txt)
+        return txt
+
+    def add_rds(self, name, stack, **kw):
+        """
+        """
+        rds = Rds(name, stack, **kw)
+        self.add_record(rds)
+        return rds
+
+    def _safe_name(self, name):
+        """
+        """
+        return inflection.camelize(name.replace('.', '_'))
 
     def build_template(self):
         t = self._init_template()
 
         zone = t.add_resource(route53.HostedZone(
-            '{}HostedZone'.format(self.stack_name),
-            HostedZoneConfig=route53.HostedZoneConfiguration(
-                Comment='{} DNS Hosted Zone'.format(self.domain_name)
-            ),
+            "{}HostedZone".format(self.name),
             Name=self.domain_name
         ))
 
-        t.add_output([
-            Output(
-                '{}HostedZone'.format(self.stack_name),
-                Value=Ref(zone)
-            )
-        ])
+        if self.vpc:
+            vpc_param = ensure_param(t, self.vpc.output_vpc())
+            zone.VPCs = [
+                route53.HostedZoneVPCs(
+                    VPCId=Ref(vpc_param),
+                    VPCRegion=Ref("AWS::Region")
+                )
+            ]
 
-        rs = []
+        group = t.add_resource(route53.RecordSetGroup(
+            "{}RecordGroup".format(self.name),
+            HostedZoneId=Ref(zone),
+            DependsOn=zone,
+            RecordSets=[
+                rs.add_to_template(t)
+                for rs in self.records
+            ]))
 
-        for r in self.records:
-            rs.append(r.add_to_template(t, zone))
-
-        t.add_resource(route53.RecordSetGroup(
-            '{}RecordGroup'.format(self.stack_name),
-            RecordSets=rs,
-            HostedZoneId=Ref(zone)
-        ))
 
         return t
