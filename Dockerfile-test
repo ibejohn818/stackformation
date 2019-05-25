@@ -5,5 +5,7 @@ FROM python:3.6
 COPY ./requirements.txt /.
 COPY ./requirements_dev.txt /.
 
+RUN useradd jhardy
+
 RUN /bin/bash -c 'pip3 install -r /requirements.txt && \
                     pip3 install -r requirements_dev.txt'
