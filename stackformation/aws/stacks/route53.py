@@ -71,8 +71,8 @@ class Elb(Record):
     def add_to_template(self, t):
         """
         """
-        zone_param = ensure_param(t, self.value[0].output_hosted_zone(), 'String')
-        dns_param = ensure_param(t, self.value[0].output_dns_name(), 'String')
+        zone_param = ensure_param(t, self.value.output_hosted_zone(), 'String')
+        dns_param = ensure_param(t, self.value.output_dns_name(), 'String')
         r = route53.RecordSet(
             '{}ELBRecord'.format(self._safe_dns_name(self.name)),
             Name="{}{}".format(self.name, self.stack.domain_name),
@@ -96,7 +96,7 @@ class Rds(CName):
 
     def add_to_template(self, t):
 
-        dns_param = ensure_param(t, self.value[0].output_endpoint(), 'String')
+        dns_param = ensure_param(t, self.value.output_endpoint(), 'String')
         r = route53.RecordSet(
             '{}RDSRecord'.format(self._safe_dns_name(self.name)),
             Name="{}{}".format(self.name, self.stack.domain_name),
@@ -139,8 +139,8 @@ class Route53Stack(BaseStack):
         pass
 
     def add_google_mx(self, name, **kw):
-        g = GoogleMx(name)
-        self.add_record(q)
+        g = GoogleMX(name)
+        self.add_record(g)
         return g
 
     def add_elb(self, name, stack, **kw):
