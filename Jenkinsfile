@@ -54,26 +54,6 @@ node {
             }
         }
 
-        if (env.BRANCH_NAME == "dockerhub-jenkins-push") {
-            stage("Push latest to DockerHub") {
-                withCredentials([usernamePassword(credentialsId: 'ibejohn818Dockerhub', passwordVariable: 'PW', usernameVariable: 'UN')]) {
-                    // Build Latest Tag
-                    sh "docker build -t ibejohn818/stackformation:latest ."
-                    echo "Push to docker hub"
-                    sh "docker login --login ${env.UN} --password ${env.PW}"
-                    sh "docker push ibejohn818/stackformation:latest"
-                }
-            }
-        }
-
-        if (env.TAG_NAME) {
-            stage("Publish To PyPi") {
-
-                stackformation.publishPypi(env.WORKSPACE, img_tag)
-
-            }
-        }
-
     } catch(Exception err) {
         currentBuild.result = "FAILURE"
     } finally {
