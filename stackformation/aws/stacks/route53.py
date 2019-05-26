@@ -75,7 +75,7 @@ class Elb(Record):
         dns_param = ensure_param(t, self.value.output_dns_name(), 'String')
         r = route53.RecordSet(
             '{}ELBRecord'.format(self._safe_dns_name(self.name)),
-            Name="{}{}".format(self.name, self.stack.domain_name),
+            Name="{}{}.".format(self.name, self.stack.domain_name),
             Type="A",
             AliasTarget=route53.AliasTarget(
                 HostedZoneId=Ref(zone_param),
@@ -99,7 +99,7 @@ class Rds(CName):
         dns_param = ensure_param(t, self.value.output_endpoint(), 'String')
         r = route53.RecordSet(
             '{}RDSRecord'.format(self._safe_dns_name(self.name)),
-            Name="{}{}".format(self.name, self.stack.domain_name),
+            Name="{}{}.".format(self.name, self.stack.domain_name),
             Type="CNAME",
             TTL=self.ttl,
             ResourceRecords=[Ref(dns_param)]
@@ -112,6 +112,24 @@ class Txt(Record):
     def __init__(self, name, value, **kw):
         super().__init__(name, value, **kw)
         self.type = 'TXT'
+
+class Cloudfront(Record):
+
+    def add_to_template(self, t):
+
+        dns_param = ensure_param(t, self.value.output_dns(), 'String')
+        zone_id = "Z2FDTNDATAQYW2"
+        r = route53.RecordSet(
+            '{}CFRecord'.format(self._safe_dns_name(self.name)),
+            Name="{}{}.".format(self.name, self.stack.domain_name),
+            Type="A",
+            AliasTarget=route53.AliasTarget(
+                HostedZoneId=zone_id,
+                DNSName=Ref(dns_param)
+            )
+        )
+
+        return r
 
 
 class Route53Stack(BaseStack):
@@ -139,7 +157,7 @@ class Route53Stack(BaseStack):
         pass
 
     def add_google_mx(self, name, **kw):
-        g = GoogleMX(name)
+        g = GoogleMX(name, **kw)
         self.add_record(g)
         return g
 
