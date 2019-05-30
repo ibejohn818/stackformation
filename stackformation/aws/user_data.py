@@ -181,3 +181,23 @@ ECS_LOGLEVEL=info
 ECS_CLUSTER={{{{context('{0}')}}}}
 EOF
 """.format(self.ecs_cluster.output_cluster())  # noqa
+
+
+
+class SwapFile(UserData):
+
+    def __init__(self, size='1G'):
+
+        name = "SwapFile"
+        super().__init__("SwapFile")
+        self.size = size
+
+
+    def render(self):
+        return """
+fallocate -l {} /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+
+""".format(self.size)
