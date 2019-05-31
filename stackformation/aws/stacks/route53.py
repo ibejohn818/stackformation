@@ -49,7 +49,27 @@ class ARecord(Record):
         super().__init__(name, value, **kw)
         self.type = "A"
 
+class EIPARecord(Record):
 
+    def __init__(self, name, value, **kw):
+        super().__init__(name, value, **kw)
+        self.type = "A"
+
+    def add_to_template(self, template):
+
+
+        param = Ref(ensure_param(template,
+                                 self.value.output_eip()))
+
+        record = route53.RecordSet(
+            '{}EipARecord'.format(self._safe_dns_name(self.name)),
+            Name="{}{}.".format(self.name, self.stack.domain_name),
+            Type=self.type,
+            TTL=self.ttl,
+            ResourceRecords=[param]
+        )
+
+        return record
 
 
 class GoogleMX(Record):
@@ -149,7 +169,10 @@ class Route53Stack(BaseStack):
         return record
 
     def add_a(self, name, ip, **kw):
-        a = ARecord(name, ip, **kw)
+        if isinstance(ip, eip.EIP):
+            a = EIPARecord(name, ip, **kw)
+        else:
+            a = ARecord(name, ip, **kw)
         self.add_record(a)
         return a
 
