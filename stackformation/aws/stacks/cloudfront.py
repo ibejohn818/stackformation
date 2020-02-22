@@ -32,7 +32,7 @@ class Behavior(object):
         self.streaming = False
         self.origin_id = None
         self.default = False
-        self.forward_cookies = 'all'
+        self.forward_cookies = kwargs.get("forward_cookies", 'all')
         self.cookie_list = []
         self.forward_querystring = True
         self.querystring_list = []
@@ -46,7 +46,7 @@ class Behavior(object):
             'headers': []
         }
         defaults.update(kwargs)
-        paths = ["*.jpg", "*.jpeg", "*.gif", "*.png", "*.js", "*.css"]
+        paths = ["*.jpg", "*.jpeg", "*.gif", "*.png", "*.js", "*.css", "*.ttf",  "*.svg"]
         b = []
         for path in paths:
             defaults['pattern'] = path
@@ -63,7 +63,11 @@ class Behavior(object):
             QueryString=self.forward_querystring
         )
 
-        if self.forward_cookies == 'all':
+        if self.forward_cookies == 'none':
+            fw.Cookies = Cookies(
+                Forward='none'
+            )
+        elif self.forward_cookies == 'all':
             fw.Cookies = Cookies(
                 Forward='all'
             )
@@ -137,13 +141,15 @@ class Origin(object):
             ))
         elif isinstance(self.origin, apigateway.SwaggerApiStack):
             domain_ref = ensure_param(t, self.origin.output_url())
+        elif isinstance(self.origin, elb.ELBStack):
+            domain_ref = ensure_param(t, self.origin.output_dns_name())
         else:
             domain_ref = t.add_parameter(Parameter(
                 'Input{}Origin'.format(self.name),
                 Type='String'
             ))
 
-        co = cloudfront.CustomOrigin(
+        co = cloudfront.CustomOriginConfig(
             OriginReadTimeout=self.origin_timeout,
             OriginProtocolPolicy=self.origin_proto,
             OriginSSLProtocols=self.ssl_protocols
@@ -169,6 +175,7 @@ class CloudfrontStack(BaseStack):
         self.errors = []
         self.acm_ssl_arn = kwargs.get('acm_ssl_arn', None)
         self.iam_ssl_id = kwargs.get('iam_ssl_id', None)
+        self.http_version = kwargs.get("http_version", "http1.1")
 
     def add_errors(self, **kwargs):
         err = cloudfront.CustomErrorResponse()
@@ -207,6 +214,7 @@ class CloudfrontStack(BaseStack):
             '{}Cloudfront'.format(self.stack_name),
             DistributionConfig=cloudfront.DistributionConfig(
                 Aliases=self.domains,
+                HttpVersion=self.http_version,
                 DefaultRootObject=self.index_file,
                 DefaultCacheBehavior=self.default_behavior,
                 Enabled=True,
@@ -219,7 +227,7 @@ class CloudfrontStack(BaseStack):
             dist.DistributionConfig.ViewerCertificate = cloudfront.ViewerCertificate( # noqa
                 AcmCertificateArn=self.acm_ssl_arn,
                 SslSupportMethod='sni-only',
-                MinimumProtocolVersion='TLSv1')
+                MinimumProtocolVersion='TLSv1.1_2016')
         elif self.iam_ssl_id:
             dist.DistributionConfig.ViewerCertificate = cloudfront.ViewerCertificate( # noqa
                 IamCertificateId=self.iam_ssl_id,

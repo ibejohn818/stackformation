@@ -117,7 +117,7 @@ class S3Bucket(BaseS3Bucket):
 
         if self.cors_enabled is True \
                 and len(self.cors_rules) <= 0:
-            self.add_cors_rule("CorsAll", ['*'], ['GET'], ['*'], 3000)
+            self.add_cors_rule("CorsAll", ['*'], ['GET', 'POST', 'PUT'], ['*'], 3000)
 
         if len(self.cors_rules) > 0:
             cors = s3.CorsConfiguration(

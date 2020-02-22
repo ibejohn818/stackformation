@@ -136,10 +136,10 @@ class DynamoTable(object):
 
         tbl = t.add_resource(dynamodb.Table(
             '{}Table'.format(self.name),
-            ProvisionedThroughput=dynamodb.ProvisionedThroughput(
-                ReadCapacityUnits=self.read_units,
-                WriteCapacityUnits=self.write_units
-            ),
+            # ProvisionedThroughput=dynamodb.ProvisionedThroughput(
+                # ReadCapacityUnits=self.read_units,
+                # WriteCapacityUnits=self.write_units
+            # ),
             PointInTimeRecoverySpecification=dynamodb.PointInTimeRecoverySpecification(
                 PointInTimeRecoveryEnabled=self.pitr_enabled
             )
@@ -170,6 +170,7 @@ class DynamoTable(object):
             for attr in self.attrs
         ]
 
+        tbl.BillingMode = 'PAY_PER_REQUEST'
         tbl.GlobalSecondaryIndexes = []
 
         for a in self.gsi:

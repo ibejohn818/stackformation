@@ -338,7 +338,7 @@ class Ami(PackerImage):
         aws_builder = {
             'type': 'amazon-ebs',
             'source_ami': self.get_base_ami(),
-            'instance_type': 't2.medium',
+            'instance_type': 't2.micro',
             'communicator': 'ssh',
             'ssh_pty': 'true',
             'ssh_username': self.get_ssh_user(),
