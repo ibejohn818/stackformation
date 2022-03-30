@@ -1,5 +1,5 @@
 boto3==1.9.150
-Click==6.7
+Click==8.1.1
 troposphere==2.4.7
 awacs==0.7.2
 jinja2==2.10
